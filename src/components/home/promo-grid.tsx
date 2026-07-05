@@ -6,27 +6,27 @@ const promoBanners = [
   {
     title: "Beauty & Hair Care",
     subtitle: "Shop oils, shampoo, conditioner and hair essentials",
-    image: "/images/banners/banner-1.jpg",
+    image: "/images/banner1.jpg",
   },
   {
     title: "Fashion Finds",
     subtitle: "Wigs, bags, shoes and new arrivals",
-    image: "/images/banners/banner-2.jpg",
+    image: "/images/banner2.jpg",
   },
   {
     title: "Food & Grocery",
     subtitle: "Everyday essentials and trusted products",
-    image: "/images/banners/banner-3.jpg",
+    image: "/images/banner3.jpg",
   },
   {
     title: "Shoes & Bags",
     subtitle: "Fresh styles for women and men",
-    image: "/images/banners/banner-4.jpg",
+    image: "/images/banner4.jpg",
   },
   {
     title: "New Arrivals",
     subtitle: "Latest products added this week",
-    image: "/images/banners/banner-5.jpg",
+    image: "/images/banner5.jpg",
   },
 ];
 
@@ -90,7 +90,7 @@ export default function PromoGrid() {
           <a
             key={banner.title}
             href="/products"
-            className="group relative h-[220px] w-[calc((100%-32px)/3)] min-w-[calc((100%-32px)/3)] snap-start overflow-hidden rounded-2xl bg-slate-200 shadow-sm"
+            className="group relative h-[150px] w-[calc((100%-32px)/3)] min-w-[calc((100%-32px)/3)] snap-start overflow-hidden rounded-2xl bg-slate-200 shadow-sm"
           >
             <img
               src={banner.image}
@@ -98,19 +98,6 @@ export default function PromoGrid() {
               className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent" />
-
-            <div className="absolute left-6 top-6 max-w-[280px] text-white">
-              <h2 className="line-clamp-2 text-2xl font-bold leading-tight">
-                {banner.title}
-              </h2>
-
-              <p className="mt-2 line-clamp-2 text-sm leading-5 text-white/90">
-                {banner.subtitle}
-              </p>
-
-              <p className="mt-4 text-sm font-bold">Shop now</p>
-            </div>
           </a>
         ))}
       </div>
