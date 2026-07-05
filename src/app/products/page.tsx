@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductGrid from "../../components/products/product-grid";
+import { prisma } from "../../lib/prisma";
 
 type Product = {
   id: string;
@@ -12,16 +13,16 @@ type Product = {
 };
 
 async function getProducts(): Promise<Product[]> {
-  const res = await fetch("http://localhost:3000/api/products", {
-    cache: "no-store",
+  const products = await prisma.product.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch products");
-  }
-
-  const data = await res.json();
-  return data.products || [];
+  return products;
 }
 
 export default async function ProductsPage({
@@ -30,6 +31,7 @@ export default async function ProductsPage({
   searchParams: Promise<{ category?: string; search?: string }>;
 }) {
   const params = await searchParams;
+
   const category = params.category?.toLowerCase() || "";
   const search = params.search?.toLowerCase() || "";
 
@@ -67,6 +69,7 @@ export default async function ProductsPage({
           <h2 className="text-2xl font-bold text-slate-900">
             No products found
           </h2>
+
           <p className="mt-3 text-sm text-slate-600">
             We do not have products in this category yet.
           </p>
