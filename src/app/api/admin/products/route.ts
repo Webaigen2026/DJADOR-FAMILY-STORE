@@ -19,7 +19,11 @@ export async function POST(req: Request) {
     const originalPrice = Number(body.originalPrice || 0);
     const brand = String(body.brand || "").trim();
     const category = String(body.category || "").trim();
-    const imageUrls = Array.isArray(body.imageUrls) ? body.imageUrls : [];
+    const imageUrls = Array.isArray(body.imageUrls)
+  ? body.imageUrls
+  : Array.isArray(body.images)
+  ? body.images
+  : [];
     const mainImageUrl = imageUrls[0] || String(body.imageUrl || "").trim();
     const stock = Number(body.stock || 0);
     const isActive = Boolean(body.isActive);
