@@ -19,7 +19,10 @@ type Product = {
 };
 
 async function getProduct(slug: string): Promise<Product> {
-  const res = await fetch(`http://localhost:3000/api/products/${slug}`, {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+  const res = await fetch(`${baseUrl}/api/products/${slug}`, {
     cache: "no-store",
   });
 
