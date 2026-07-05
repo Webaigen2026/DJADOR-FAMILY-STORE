@@ -1,6 +1,7 @@
 import ProductInfo from "../../../components/products/product-info";
 import AddToCartButton from "../../../components/products/add-to-cart-button";
 import ProductGallery from "../../../components/products/product-gallery";
+import { prisma } from "../../../lib/prisma";
 
 type ProductImage = {
   id: string;
@@ -18,19 +19,15 @@ type Product = {
   images?: ProductImage[];
 };
 
-async function getProduct(slug: string): Promise<Product> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-  const res = await fetch(`${baseUrl}/api/products/${slug}`, {
-    cache: "no-store",
+async function getProduct(slug: string): Promise<Product | null> {
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    include: {
+      images: true,
+    },
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch product");
-  }
-
-  return res.json();
+  return product;
 }
 
 export default async function ProductDetail({
@@ -39,7 +36,16 @@ export default async function ProductDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
   const product = await getProduct(slug);
+
+  if (!product) {
+    return (
+      <div className="mx-auto max-w-6xl px-6 py-20">
+        <h1 className="text-3xl font-bold">Product Not Found</h1>
+      </div>
+    );
+  }
 
   const galleryImages =
     product.images && product.images.length > 0
