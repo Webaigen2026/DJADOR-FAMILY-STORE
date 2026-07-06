@@ -5,8 +5,8 @@ import Footer from "../components/layout/footer";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "NovaCart",
-  description: "Modern production-style ecommerce app",
+  title: "DJADOR FAMILY STORE",
+  description: "Your trusted online shopping destination",
 };
 
 export default function RootLayout({
