@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import AutoImageCarousel from "../../components/sections/auto-image-carousel";
 
 const subcategories = ["Women", "Men", "Kids", "Shoes", "Accessories"];
 
-// Edit fashion filters here.
 const filters = {
   Size: ["XS", "S", "M", "L", "XL"],
   Color: ["Black", "White", "Blue", "Red", "Green", "Beige"],
@@ -16,7 +14,6 @@ const filters = {
   Type: ["Shirts", "Jeans", "Dresses", "Jackets", "Shoes"],
 };
 
-// Edit Fashion & Clothing carousel promos here.
 const fashionSlides = [
   {
     src: "/images/fashion/promo-fashion.png",
@@ -81,24 +78,16 @@ const fashionSlides = [
 ];
 
 export default function FashionFindsPage() {
-  const searchParams = useSearchParams();
-  const initialSubcategory = useMemo(() => {
-    const fromUrl = searchParams.get("subcategory");
-    const match = subcategories.find(
-      (item) => item.toLowerCase() === fromUrl?.toLowerCase(),
-    );
-
-    return match || "Women";
-  }, [searchParams]);
-
-  const [activeSubcategory, setActiveSubcategory] = useState(initialSubcategory);
+  const [activeSubcategory, setActiveSubcategory] = useState("Women");
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
   const [genderSearch, setGenderSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
   const showFilters = activeSubcategory === "Women" || activeSubcategory === "Men";
+
   const activeFilterCount = Object.values(activeFilters).reduce(
     (total, groupValues) => total + groupValues.length,
-    0,
+    0
   );
 
   function toggleFilter(group: string, value: string) {
@@ -118,12 +107,20 @@ export default function FashionFindsPage() {
   function searchGender() {
     const normalized = genderSearch.trim().toLowerCase();
 
-    if (normalized.includes("woman") || normalized.includes("women") || normalized.includes("mujer")) {
+    if (
+      normalized.includes("woman") ||
+      normalized.includes("women") ||
+      normalized.includes("mujer")
+    ) {
       setActiveSubcategory("Women");
       return;
     }
 
-    if (normalized.includes("man") || normalized.includes("men") || normalized.includes("hombre")) {
+    if (
+      normalized.includes("man") ||
+      normalized.includes("men") ||
+      normalized.includes("hombre")
+    ) {
       setActiveSubcategory("Men");
     }
   }
@@ -149,9 +146,11 @@ export default function FashionFindsPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Fashion Finds
               </p>
+
               <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
                 Fashion finds are coming soon.
               </h1>
+
               <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
                 This collection page is ready. Products, filters, and featured
                 picks can be added here when the catalog is prepared.
@@ -174,10 +173,13 @@ export default function FashionFindsPage() {
                 <h2 className="text-2xl font-bold text-slate-900">
                   Shop Fashion
                 </h2>
+
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {activeSubcategory}
                   {activeFilterCount > 0
-                    ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"} selected`
+                    ? ` · ${activeFilterCount} filter${
+                        activeFilterCount === 1 ? "" : "s"
+                      } selected`
                     : " · Open filters to refine your search"}
                 </p>
               </div>
@@ -196,6 +198,7 @@ export default function FashionFindsPage() {
           <h2 className="mt-10 text-center text-2xl font-bold text-slate-900">
             No products yet
           </h2>
+
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
             Fashion products will appear here once they are added.
           </p>
@@ -234,6 +237,7 @@ export default function FashionFindsPage() {
                 <p className="mb-3 text-sm font-black text-slate-950">
                   Category
                 </p>
+
                 <div className="flex flex-wrap gap-2">
                   {subcategories.map((subcategory) => {
                     const isActive = activeSubcategory === subcategory;
@@ -260,8 +264,10 @@ export default function FashionFindsPage() {
                 <p className="text-sm font-black text-slate-950">
                   Search by shopper
                 </p>
+
                 <label className="relative mt-3 block">
                   <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
                   <input
                     type="search"
                     value={genderSearch}
@@ -275,6 +281,7 @@ export default function FashionFindsPage() {
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-slate-900"
                   />
                 </label>
+
                 <button
                   type="button"
                   onClick={searchGender}
@@ -291,6 +298,7 @@ export default function FashionFindsPage() {
                       <p className="mb-3 text-sm font-black text-slate-950">
                         {group}
                       </p>
+
                       <div className="flex flex-wrap gap-2">
                         {options.map((option) => {
                           const isActive =
