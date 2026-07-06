@@ -10,23 +10,31 @@ export default function CartSummary({ totalItems, subtotal }: Props) {
   const deliveryCharge = 0;
   const total = subtotal - discount + deliveryCharge;
 
+  const formatPrice = (amount: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+
   return (
     <aside className="border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-          Price details
+          Price Details
         </p>
       </div>
 
       <div className="space-y-4 px-5 py-4 text-sm">
         <div className="flex items-center justify-between text-slate-700">
           <span>Price ({totalItems} items)</span>
-          <span>₹{subtotal}</span>
+          <span>{formatPrice(subtotal)}</span>
         </div>
 
         <div className="flex items-center justify-between text-slate-700">
           <span>Discount</span>
-          <span className="text-emerald-600">-₹{discount}</span>
+          <span className="text-emerald-600">
+            -{formatPrice(discount)}
+          </span>
         </div>
 
         <div className="flex items-center justify-between text-slate-700">
@@ -37,12 +45,12 @@ export default function CartSummary({ totalItems, subtotal }: Props) {
         <div className="border-t border-dashed border-slate-300 pt-4">
           <div className="flex items-center justify-between text-lg font-bold text-slate-900">
             <span>Total Amount</span>
-            <span>₹{total}</span>
+            <span>{formatPrice(total)}</span>
           </div>
         </div>
 
         <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-          You will save ₹{discount} on this order
+          You save {formatPrice(discount)} on this order
         </div>
       </div>
 

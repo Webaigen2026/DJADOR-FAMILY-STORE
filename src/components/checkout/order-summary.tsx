@@ -14,6 +14,13 @@ type Props = {
   items: SummaryItem[];
 };
 
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
 export default function OrderSummary({ items }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -72,10 +79,13 @@ export default function OrderSummary({ items }: Props) {
             >
               <div>
                 <p className="font-semibold text-slate-900">{item.name}</p>
-                <p className="mt-1 text-sm text-slate-500">Qty: {item.quantity}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Qty: {item.quantity}
+                </p>
               </div>
+
               <p className="font-semibold text-slate-900">
-                ₹{item.quantity * item.price}
+                {formatPrice(item.quantity * item.price)}
               </p>
             </div>
           ))}
@@ -86,17 +96,20 @@ export default function OrderSummary({ items }: Props) {
             <span>Total items</span>
             <span>{totalItems}</span>
           </div>
+
           <div className="flex items-center justify-between text-slate-600">
             <span>Subtotal</span>
-            <span>₹{subtotal}</span>
+            <span>{formatPrice(subtotal)}</span>
           </div>
+
           <div className="flex items-center justify-between text-slate-600">
             <span>Shipping</span>
             <span className="font-medium text-emerald-700">Free</span>
           </div>
+
           <div className="flex items-center justify-between border-t border-slate-200 pt-4 text-lg font-bold text-slate-900">
             <span>Total</span>
-            <span>₹{subtotal}</span>
+            <span>{formatPrice(subtotal)}</span>
           </div>
         </div>
 

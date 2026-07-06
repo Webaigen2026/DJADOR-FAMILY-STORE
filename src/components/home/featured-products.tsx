@@ -44,6 +44,13 @@ const featuredProducts = [
   },
 ];
 
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(price);
+
 export default function FeaturedProducts({
   title = "Trending Products",
 }: {
@@ -52,6 +59,7 @@ export default function FeaturedProducts({
   return (
     <section className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-900">{title}</h2>
 
         <Link
           href="/products"
@@ -92,10 +100,11 @@ export default function FeaturedProducts({
 
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-base font-bold text-slate-900">
-                  ₹{product.price}
+                  {formatPrice(product.price)}
                 </span>
+
                 <span className="text-xs text-slate-400 line-through">
-                  ₹{product.originalPrice}
+                  {formatPrice(product.originalPrice)}
                 </span>
               </div>
 
@@ -104,12 +113,12 @@ export default function FeaturedProducts({
               </p>
 
               <p className="mt-1 text-xs font-medium text-blue-600">
-                ₹500 with Bank offer + more
+                $500 with Bank offer + more
               </p>
             </div>
           </Link>
         ))}
-      </div>       c
+      </div>
     </section>
   );
 }

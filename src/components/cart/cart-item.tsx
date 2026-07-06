@@ -22,6 +22,13 @@ type Props = {
   onRemove: (itemId: string) => void;
 };
 
+function formatPrice(price: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(price);
+}
+
 export default function CartItem({
   item,
   onQuantityChange,
@@ -32,7 +39,6 @@ export default function CartItem({
   const image =
     item.product.imageUrl || item.product.image || "/images/headphones.jpg";
 
-  // ✅ UPDATE QUANTITY (+ / -)
   async function updateQuantity(nextQuantity: number) {
     if (nextQuantity < 1) return;
 
@@ -57,7 +63,6 @@ export default function CartItem({
         return;
       }
 
-      // update UI
       onQuantityChange(item.id, nextQuantity);
     } catch (error) {
       alert("Something went wrong");
@@ -66,7 +71,6 @@ export default function CartItem({
     }
   }
 
-  // ✅ REMOVE ITEM (FIXED)
   async function removeItem() {
     try {
       setLoading(true);
@@ -77,7 +81,7 @@ export default function CartItem({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId: item.product.id, // 🔥 IMPORTANT FIX
+          productId: item.product.id,
         }),
       });
 
@@ -88,7 +92,6 @@ export default function CartItem({
         return;
       }
 
-      // update UI
       onRemove(item.id);
     } catch (error) {
       alert("Something went wrong");
@@ -100,8 +103,6 @@ export default function CartItem({
   return (
     <div className="border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex gap-4">
-
-        {/* IMAGE */}
         <div className="h-28 w-28 overflow-hidden border bg-slate-50">
           <img
             src={image}
@@ -110,7 +111,6 @@ export default function CartItem({
           />
         </div>
 
-        {/* DETAILS */}
         <div className="flex flex-1 flex-col justify-between">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">
@@ -123,7 +123,7 @@ export default function CartItem({
 
             <div className="mt-3 flex items-center gap-3">
               <p className="text-xl font-bold">
-                ₹{item.product.price}
+                {formatPrice(item.product.price)}
               </p>
               <span className="text-green-600 text-sm">
                 Special price
@@ -131,10 +131,7 @@ export default function CartItem({
             </div>
           </div>
 
-          {/* ACTIONS */}
           <div className="mt-4 flex items-center gap-4">
-
-            {/* QUANTITY */}
             <div className="flex border border-slate-300">
               <button
                 onClick={() => updateQuantity(item.quantity - 1)}
@@ -157,7 +154,6 @@ export default function CartItem({
               </button>
             </div>
 
-            {/* REMOVE */}
             <button
               onClick={removeItem}
               disabled={loading}
@@ -168,11 +164,10 @@ export default function CartItem({
           </div>
         </div>
 
-        {/* TOTAL */}
         <div className="hidden md:block text-right">
           <p className="text-sm text-slate-500">Item Total</p>
           <p className="text-lg font-bold">
-            ₹{item.product.price * item.quantity}
+            {formatPrice(item.product.price * item.quantity)}
           </p>
         </div>
       </div>
