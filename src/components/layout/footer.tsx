@@ -29,7 +29,7 @@ export default function Footer() {
               href="/"
               className="text-2xl font-bold tracking-tight text-slate-900"
             >
-              NovaCart
+              DJADOR FAMILY STORE
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-7 text-slate-600">
               A modern ecommerce experience focused on smooth browsing, secure
@@ -90,7 +90,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-4 border-t border-slate-200 pt-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 NovaCart. All rights reserved.</p>
+          <p>© 2026 DJADOR FAMILY STORE. All rights reserved.</p>
           <div className="flex flex-wrap gap-6">
             <Link href="#" className="transition hover:text-slate-900">
               Privacy Policy

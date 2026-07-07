@@ -3,6 +3,13 @@ import { prisma } from "../../../lib/prisma";
 import { revalidatePath } from "next/cache";
 import ProductSearchFilter from "../../../components/admin/product-search-filter";
 
+function formatMoney(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
 async function deactivateProduct(formData: FormData) {
   "use server";
 
@@ -190,8 +197,8 @@ export default async function AdminProductsPage({
                   </td>
 
                   <td className="px-6 py-5 font-bold text-slate-950">
-                    ₹{product.price}
-                  </td>
+  {formatMoney(product.price)}
+</td>
 
                   <td className="px-6 py-5">
                     <span

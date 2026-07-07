@@ -17,7 +17,10 @@ function Badge({ value }: { value: string }) {
 }
 
 function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-IN").format(amount);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 export default async function AdminOrdersPage({
@@ -186,7 +189,7 @@ export default async function AdminOrdersPage({
           <div className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 shadow-xl shadow-green-100">
             <p className="text-sm font-black text-green-700">Revenue</p>
             <h2 className="mt-3 text-3xl font-black text-green-700">
-              ₹{formatMoney(revenue)}
+              {formatMoney(revenue)}
             </h2>
           </div>
 
@@ -348,7 +351,7 @@ export default async function AdminOrdersPage({
                   </td>
 
                   <td className="px-6 py-5 font-black text-slate-950">
-                    ₹{formatMoney(order.totalAmount)}
+                    {formatMoney(order.totalAmount)}
                   </td>
 
                   <td className="px-6 py-5">

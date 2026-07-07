@@ -2,7 +2,10 @@ import Link from "next/link";
 import { prisma } from "../../../lib/prisma";
 
 function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-IN").format(amount);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 function Badge({ value }: { value: string }) {
@@ -156,8 +159,8 @@ export default async function AdminAnalyticsPage() {
           <div className="rounded-3xl bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
             <p className="text-sm font-bold text-slate-300">Total Revenue</p>
             <h2 className="mt-3 text-4xl font-black">
-              ₹{formatMoney(revenue)}
-            </h2>
+  {formatMoney(revenue)}
+</h2>
             <p className="mt-3 text-sm text-green-300">Updated live</p>
           </div>
 
@@ -167,8 +170,8 @@ export default async function AdminAnalyticsPage() {
               {orders.length}
             </h2>
             <p className="mt-3 text-sm text-blue-600">
-              Avg ₹{formatMoney(averageOrderValue)}
-            </p>
+  Avg {formatMoney(averageOrderValue)}
+</p>
           </div>
 
           <div className="rounded-3xl border border-green-100 bg-green-50 p-6 shadow-xl shadow-green-100">
@@ -202,8 +205,8 @@ export default async function AdminAnalyticsPage() {
             <div className="rounded-2xl bg-green-50 p-5">
               <p className="text-sm font-black text-green-700">Today</p>
               <h3 className="mt-2 text-3xl font-black text-green-700">
-                ₹{formatMoney(todayRevenue)}
-              </h3>
+  {formatMoney(todayRevenue)}
+</h3>
               <p className="mt-2 text-sm text-green-600">
                 {todayOrders.length} orders
               </p>
@@ -212,7 +215,7 @@ export default async function AdminAnalyticsPage() {
             <div className="rounded-2xl bg-blue-50 p-5">
               <p className="text-sm font-black text-blue-700">Yesterday</p>
               <h3 className="mt-2 text-3xl font-black text-blue-700">
-                ₹{formatMoney(yesterdayRevenue)}
+                {formatMoney(yesterdayRevenue)}
               </h3>
               <p className="mt-2 text-sm text-blue-600">
                 {yesterdayOrders.length} orders
@@ -224,7 +227,7 @@ export default async function AdminAnalyticsPage() {
                 Last 7 Days
               </p>
               <h3 className="mt-2 text-3xl font-black text-purple-700">
-                ₹{formatMoney(last7DaysRevenue)}
+                {formatMoney(last7DaysRevenue)}
               </h3>
               <p className="mt-2 text-sm text-purple-600">
                 {last7DaysOrders.length} orders
@@ -234,7 +237,7 @@ export default async function AdminAnalyticsPage() {
             <div className="rounded-2xl bg-slate-50 p-5">
               <p className="text-sm font-black text-slate-700">This Month</p>
               <h3 className="mt-2 text-3xl font-black text-slate-950">
-                ₹{formatMoney(monthRevenue)}
+                {formatMoney(monthRevenue)}
               </h3>
               <p className="mt-2 text-sm text-slate-600">
                 {monthOrders.length} orders
@@ -318,9 +321,9 @@ export default async function AdminAnalyticsPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="font-black text-slate-950">
-                      ₹{formatMoney(order.totalAmount)}
-                    </p>
+                  <p className="font-black text-slate-950">
+  {formatMoney(order.totalAmount)}
+</p>
                     <div className="mt-1">
                       <Badge value={order.paymentStatus} />
                     </div>
@@ -387,8 +390,8 @@ export default async function AdminAnalyticsPage() {
                   </div>
 
                   <p className="font-black text-green-700">
-                    ₹{formatMoney(product.price)}
-                  </p>
+  {formatMoney(product.price)}
+</p>
                 </div>
               ))}
 

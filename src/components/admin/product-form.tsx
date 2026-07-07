@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+function formatPrice(amount: number | string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(amount) || 0);
+}
+
 export default function ProductForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -355,17 +362,16 @@ imageUrls: [] as string[],
                 </p>
 
                 <div className="mt-4 flex items-end gap-2">
-                  <span className="text-2xl font-bold text-slate-950">
-                    ₹{form.price || "0"}
-                  </span>
+  <span className="text-2xl font-bold text-slate-950">
+    {formatPrice(form.price || 0)}
+  </span>
 
-                  {form.originalPrice ? (
-                    <span className="pb-1 text-sm text-slate-400 line-through">
-                      ₹{form.originalPrice}
-                    </span>
-                  ) : null}
-                </div>
-
+  {form.originalPrice ? (
+    <span className="pb-1 text-sm text-slate-400 line-through">
+      {formatPrice(form.originalPrice)}
+    </span>
+  ) : null}
+</div>
                 <div className="mt-4 flex items-center justify-between">
                   <p
                     className={`text-sm font-bold ${

@@ -2,6 +2,13 @@ import Link from "next/link";
 import { prisma } from "../../lib/prisma";
 import AdminLayout from "../../components/admin/AdminLayout";
 
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
 export default async function AdminDashboardPage() {
   const products = await prisma.product.findMany({
     include: { images: true },
@@ -87,21 +94,23 @@ export default async function AdminDashboardPage() {
             </div>
 
             <div className="grid gap-5 lg:grid-cols-4">
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-sm font-bold text-slate-500">Total Revenue</p>
-                <h2 className="mt-3 text-3xl font-black text-slate-950">
-                  ₹{totalRevenue}
-                </h2>
-                <p className="mt-4 text-sm font-bold text-emerald-600">
-                  ↑ Updated live
-                </p>
-              </div>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+  <p className="text-sm font-bold text-slate-500">Total Revenue</p>
+  <h2 className="mt-3 text-3xl font-black text-slate-950">
+    {formatPrice(totalRevenue)}
+  </h2>
+  <p className="mt-4 text-sm font-bold text-emerald-600">
+    ↑ Updated live
+  </p>
+</div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-sm font-bold text-slate-500">Total Orders</p>
-                <h2 className="mt-3 text-3xl font-black text-slate-950">
-                  {totalOrders}
-                </h2>
+<div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+  <p className="text-sm font-bold text-slate-500">Total Orders</p>
+  <h2 className="mt-3 text-3xl font-black text-slate-950">
+    {totalOrders}
+  </h2>
+  
+
                 <p className="mt-4 text-sm font-bold text-emerald-600">
                   ↑ Updated live
                 </p>
@@ -217,8 +226,8 @@ export default async function AdminDashboardPage() {
                           </p>
                         </div>
                         <p className="font-black text-slate-950">
-                          ₹{order.totalAmount}
-                        </p>
+  {formatPrice(order.totalAmount)}
+</p>
                       </div>
                     ))
                   ) : (
@@ -270,8 +279,8 @@ export default async function AdminDashboardPage() {
                       </div>
 
                       <p className="text-sm font-black text-emerald-600">
-                        ₹{product.price}
-                      </p>
+  {formatPrice(product.price)}
+</p>
                     </div>
                   ))}
                 </div>
@@ -279,8 +288,8 @@ export default async function AdminDashboardPage() {
             </div>
 
             <p className="mt-10 border-t border-slate-200 pt-6 text-sm text-slate-500">
-              NovaCart - Admin Dashboard
-            </p>
+  DJADOR FAMILY STORE - Admin Dashboard
+</p>
           </div>
                         
         </div>

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { prisma } from "../../../lib/prisma";
 
 function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-IN").format(amount);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 export default async function AdminCustomersPage({
@@ -126,7 +129,7 @@ export default async function AdminCustomersPage({
           <div className="rounded-3xl bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
             <p className="text-sm font-bold text-slate-300">Customer Revenue</p>
             <h2 className="mt-3 text-3xl font-black">
-              ₹{formatMoney(totalRevenue)}
+              {formatMoney(totalRevenue)}
             </h2>
           </div>
         </div>
@@ -221,7 +224,7 @@ export default async function AdminCustomersPage({
                     </td>
 
                     <td className="px-6 py-5 font-black text-slate-950">
-                      ₹{formatMoney(totalSpent)}
+                      {formatMoney(totalSpent)}
                     </td>
 
                     <td className="px-6 py-5 text-slate-600">
