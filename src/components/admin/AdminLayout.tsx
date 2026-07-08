@@ -59,8 +59,8 @@ export default function AdminLayout({
               href="/admin"
               className="text-3xl font-black text-white"
             >
-              Nova
-              <span className="text-emerald-500">Cart</span>
+              DJADOR
+              <span className="text-emerald-500">FAMILY STORE</span>
             </Link>
           )}
 

@@ -18,7 +18,10 @@ function Badge({ value }: { value: string }) {
 }
 
 function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-IN").format(amount);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 async function markFulfilled(orderId: string) {
@@ -182,7 +185,7 @@ export default async function OrderDetailsPage({
           <div className="rounded-3xl bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
             <p className="text-sm font-bold text-slate-300">Order Total</p>
             <h2 className="mt-3 text-3xl font-black">
-              ₹{formatMoney(order.totalAmount)}
+              {formatMoney(order.totalAmount)}
             </h2>
             <p className="mt-2 text-xs text-slate-400">Final order value</p>
           </div>
@@ -253,14 +256,14 @@ export default async function OrderDetailsPage({
                           Quantity: {item.quantity}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Unit Price: ₹{formatMoney(item.unitPrice)}
+                          Unit Price: {formatMoney(item.unitPrice)}
                         </p>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <p className="text-lg font-black text-slate-950">
-                        ₹{formatMoney(item.quantity * item.unitPrice)}
+                        {formatMoney(item.quantity * item.unitPrice)}
                       </p>
                       <p className="mt-1 text-xs text-slate-400">Line total</p>
                     </div>
@@ -300,7 +303,7 @@ export default async function OrderDetailsPage({
                         : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
-                    ₹
+                    $
                   </div>
                   <div>
                     <p className="font-black text-slate-900">Payment status</p>
@@ -545,24 +548,24 @@ export default async function OrderDetailsPage({
                 <div className="flex justify-between">
                   <span className="text-slate-500">Subtotal</span>
                   <span className="font-black">
-                    ₹{formatMoney(order.totalAmount)}
+                    {formatMoney(order.totalAmount)}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">Shipping</span>
-                  <span className="font-black">₹0</span>
+                  <span className="font-black">$0</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">Tax</span>
-                  <span className="font-black">₹0</span>
+                  <span className="font-black">$0</span>
                 </div>
 
                 <div className="flex justify-between border-t border-slate-200 pt-3 text-base">
                   <span className="font-black text-slate-950">Total</span>
                   <span className="font-black text-slate-950">
-                    ₹{formatMoney(order.totalAmount)}
+                    {formatMoney(order.totalAmount)}
                   </span>
                 </div>
               </div>
@@ -587,7 +590,7 @@ export default async function OrderDetailsPage({
                     </div>
 
                     <p className="mt-2 text-sm text-slate-600">
-                      Amount: ₹{formatMoney(payment.amount)}
+                      Amount: {formatMoney(payment.amount)}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       Payment ID: {payment.providerPaymentId || "-"}

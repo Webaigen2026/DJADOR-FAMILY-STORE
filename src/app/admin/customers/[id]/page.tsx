@@ -2,7 +2,10 @@ import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 
 function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-IN").format(amount);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
 function Badge({ value }: { value: string }) {
@@ -178,7 +181,7 @@ export default async function CustomerDetailsPage({
               Total Spent
             </p>
             <h2 className="mt-5 text-4xl font-black text-green-700">
-              ₹{formatMoney(totalSpent)}
+              {formatMoney(totalSpent)}
             </h2>
             <p className="mt-3 text-sm font-medium text-green-600">
               {totalSpent === 0 ? "No purchases yet" : "Lifetime value"}
@@ -190,7 +193,7 @@ export default async function CustomerDetailsPage({
               Avg Order Value
             </p>
             <h2 className="mt-5 text-4xl font-black text-purple-700">
-              ₹{formatMoney(avgOrderValue)}
+              {formatMoney(avgOrderValue)}
             </h2>
             <p className="mt-3 text-sm font-medium text-purple-600">
               {avgOrderValue === 0 ? "No order average yet" : "Per order average"}
@@ -270,7 +273,7 @@ export default async function CustomerDetailsPage({
                   </td>
 
                   <td className="px-6 py-5 font-black text-slate-950">
-                    ₹{formatMoney(order.totalAmount)}
+                    {formatMoney(order.totalAmount)}
                   </td>
 
                   <td className="px-6 py-5">
