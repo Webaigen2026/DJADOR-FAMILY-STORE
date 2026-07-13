@@ -117,9 +117,9 @@ export default function CartItem({
               {item.product.name}
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Delivery by Tomorrow
-            </p>
+            <span className="text-green-600 text-sm">
+  Special price
+</span>
 
             <div className="mt-3 flex items-center gap-3">
               <p className="text-xl font-bold">

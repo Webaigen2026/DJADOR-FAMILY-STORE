@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {
-  BadgePercent,
+  ArrowRight,
+  BrushCleaning,
   Home,
-  PackagePlus,
   Shirt,
   ShoppingBag,
   Sparkles,
@@ -11,38 +11,86 @@ import {
   UserRound,
   UsersRound,
   Utensils,
-  ArrowRight,
 } from "lucide-react";
 import PromoGrid from "../components/home/promo-grid";
 import { prisma } from "../lib/prisma";
 
 const categories = [
-  { name: "For You", href: "/products", icon: Store },
-  { name: "Women", href: "/products?category=women", icon: UserRound },
-  { name: "Men", href: "/products?category=men", icon: UsersRound },
-  { name: "Beauty", href: "/products?category=beauty", icon: Sparkles },
-  { name: "Hair Care", href: "/products?category=hair-care", icon: SprayCan },
-  { name: "Shoes", href: "/products?category=shoes", icon: Shirt },
-  { name: "Bags", href: "/products?category=bags", icon: ShoppingBag },
+  {
+    name: "Discover DJADOR",
+    href: "/products?section=discover",
+    icon: Store,
+  },
+  {
+    name: "Women",
+    href: "/products?category=women",
+    icon: UserRound,
+  },
+  {
+    name: "Men",
+    href: "/products?category=men",
+    icon: UsersRound,
+  },
+  {
+    name: "Beauty",
+    href: "/products?category=beauty",
+    icon: Sparkles,
+  },
+  {
+    name: "Hair Care",
+    href: "/products?category=hair-care",
+    icon: SprayCan,
+  },
+  {
+    name: "Shoes",
+    href: "/products?category=shoes",
+    icon: Shirt,
+  },
+  {
+    name: "Bags",
+    href: "/products?category=bags",
+    icon: ShoppingBag,
+  },
   {
     name: "Food & Grocery",
     href: "/products?category=food-grocery",
-    icon: Utensils,
+    icon: ShoppingBag,
   },
   {
     name: "Home Essentials",
     href: "/products?category=home-essentials",
     icon: Home,
   },
-  { name: "Deals", href: "/products", icon: BadgePercent },
-  { name: "New Arrivals", href: "/products", icon: PackagePlus },
+  {
+    name: "Kitchen",
+    href: "/products?category=kitchen",
+    icon: Utensils,
+  },
+  {
+    name: "Cleaning",
+    href: "/products?category=cleaning",
+    icon: BrushCleaning,
+  },
+  {
+    name: "Wigs",
+    href: "/products?category=wigs",
+    icon: UsersRound,
+  },
+  {
+    name: "Personal Care",
+    href: "/products?category=personal-care",
+    icon: Sparkles,
+  },
 ];
 
 const sections = [
   {
     title: "Best Value Deals on Fashion",
     color: "from-orange-500 to-amber-400",
-    href: "/products?category=women",
+
+    // Arrow shows Women, Men, Shoes and Bags only
+    href: "/products?section=fashion",
+
     items: [
       {
         name: "Women’s Collection",
@@ -73,14 +121,11 @@ const sections = [
   {
     title: "Beauty & Hair Care",
     color: "from-pink-500 to-rose-400",
-    href: "/products?category=hair-care",
+
+    // Arrow shows Beauty, Hair Care, Wigs and Personal Care only
+    href: "/products?section=beauty-care",
+
     items: [
-      {
-        name: "Hair Care",
-        offer: "Best sellers",
-        category: "hair-care",
-        href: "/products?category=hair-care",
-      },
       {
         name: "Beauty",
         offer: "Top brands",
@@ -88,23 +133,32 @@ const sections = [
         href: "/products?category=beauty",
       },
       {
+        name: "Hair Care",
+        offer: "Best sellers",
+        category: "hair-care",
+        href: "/products?category=hair-care",
+      },
+      {
         name: "Wigs",
         offer: "New arrivals",
         category: "wigs",
-        href: "/products?category=hair-care",
+        href: "/products?category=wigs",
       },
       {
         name: "Personal Care",
         offer: "Special offer",
         category: "personal-care",
-        href: "/products?category=beauty",
+        href: "/products?category=personal-care",
       },
     ],
   },
   {
     title: "Everyday Essentials",
     color: "from-emerald-600 to-green-400",
-    href: "/products?category=food-grocery",
+
+    // Arrow shows Food, Home, Kitchen and Cleaning only
+    href: "/products?section=everyday-essentials",
+
     items: [
       {
         name: "Food & Grocery",
@@ -119,16 +173,16 @@ const sections = [
         href: "/products?category=home-essentials",
       },
       {
-        name: "Kitchen Essentials",
-        offer: "Don’t miss",
+        name: "Kitchen",
+        offer: "New arrivals",
         category: "kitchen",
-        href: "/products?category=home-essentials",
+        href: "/products?category=kitchen",
       },
       {
-        name: "Daily Needs",
-        offer: "Big savings",
-        category: "daily-needs",
-        href: "/products?category=food-grocery",
+        name: "Cleaning",
+        offer: "Special offer",
+        category: "cleaning",
+        href: "/products?category=cleaning",
       },
     ],
   },
@@ -138,16 +192,31 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(price);
+}
+
+function normalizeCategory(value?: string | null) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, " ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 async function getPreviewImages() {
   const products = await prisma.product.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: "desc" },
+    where: {
+      isActive: true,
+      imageUrl: {
+        not: null,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
     select: {
-      name: true,
       category: true,
       imageUrl: true,
     },
@@ -156,71 +225,15 @@ async function getPreviewImages() {
   const previews: Record<string, string> = {};
 
   for (const product of products) {
-    const category = product.category?.toLowerCase().trim() || "";
-    const name = product.name?.toLowerCase().trim() || "";
-    const image = product.imageUrl || "";
+    if (!product.category || !product.imageUrl) {
+      continue;
+    }
 
-    if (!image) continue;
+    const categorySlug = normalizeCategory(product.category);
 
-    if (
-      (category.includes("women") || name.includes("women")) &&
-      !previews["women"]
-    )
-      previews["women"] = image;
-
-    if (
-      (category.includes("men") || name.includes("men")) &&
-      !previews["men"]
-    )
-      previews["men"] = image;
-
-    if (
-      (category.includes("shoe") || name.includes("shoe")) &&
-      !previews["shoes"]
-    )
-      previews["shoes"] = image;
-
-    if (
-      (category.includes("bag") || name.includes("bag")) &&
-      !previews["bags"]
-    )
-      previews["bags"] = image;
-
-    if (
-      (category.includes("beauty") || name.includes("beauty")) &&
-      !previews["beauty"]
-    )
-      previews["beauty"] = image;
-
-    if (
-      (category.includes("hair") || name.includes("hair")) &&
-      !previews["hair-care"]
-    )
-      previews["hair-care"] = image;
-
-    if (
-      (category.includes("wig") || name.includes("wig")) &&
-      !previews["wigs"]
-    )
-      previews["wigs"] = image;
-
-    if (
-      (category.includes("grocery") || category.includes("food")) &&
-      !previews["food-grocery"]
-    )
-      previews["food-grocery"] = image;
-
-    if (
-      (category.includes("home") || name.includes("home")) &&
-      !previews["home-essentials"]
-    )
-      previews["home-essentials"] = image;
-
-    if (
-      (category.includes("kitchen") || name.includes("kitchen")) &&
-      !previews["kitchen"]
-    )
-      previews["kitchen"] = image;
+    if (!previews[categorySlug]) {
+      previews[categorySlug] = product.imageUrl;
+    }
   }
 
   return previews;
@@ -230,18 +243,29 @@ function HomeSection({
   section,
   previews,
 }: {
-  section: any;
+  section: (typeof sections)[number];
   previews: Record<string, string>;
 }) {
+  const availableItems = section.items.filter((item) =>
+    Boolean(previews[item.category])
+  );
+
+  if (availableItems.length === 0) {
+    return null;
+  }
+
   return (
     <section
       className={`mt-6 rounded-2xl bg-gradient-to-r ${section.color} p-4 shadow-sm`}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-2xl font-black text-white">{section.title}</h2>
+        <h2 className="text-2xl font-black text-white">
+          {section.title}
+        </h2>
 
         <Link
           href={section.href}
+          aria-label={`View ${section.title}`}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow hover:bg-slate-100"
         >
           <ArrowRight className="h-5 w-5" />
@@ -249,60 +273,62 @@ function HomeSection({
       </div>
 
       <div className="grid gap-3 rounded-xl bg-white p-3 sm:grid-cols-2 lg:grid-cols-4">
-        {section.items.map((item: any) => {
-          const image = previews[item.category];
+        {availableItems.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            className="group overflow-hidden rounded-lg bg-white transition hover:shadow-md"
+          >
+            <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-[#f1f3f6]">
+              <img
+                src={previews[item.category]}
+                alt={item.name}
+                className="max-h-full max-w-full object-contain transition duration-300 group-hover:scale-105"
+              />
+            </div>
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="group overflow-hidden rounded-lg bg-white transition hover:shadow-md"
-            >
-              <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg bg-[#f1f3f6]">
-                {image ? (
-                  <img
-                    src={image}
-                    alt={item.name}
-                    className="max-h-full max-w-full object-contain transition duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <span className="text-sm font-semibold text-slate-400">
-                    {item.name}
-                  </span>
-                )}
-              </div>
+            <div className="px-1 pt-2">
+              <h3 className="line-clamp-1 text-[15px] font-semibold text-slate-900">
+                {item.name}
+              </h3>
 
-              <div className="px-1 pt-2">
-                <h3 className="line-clamp-1 text-[15px] font-semibold text-slate-900">
-                  {item.name}
-                </h3>
-
-                <p className="mt-0.5 text-[15px] font-black text-slate-950">
-                  {item.offer}
-                </p>
-              </div>
-            </Link>
-          );
-        })}
+              <p className="mt-0.5 text-[15px] font-black text-slate-950">
+                {item.offer}
+              </p>
+            </div>
+          </Link>
+        ))}
       </div>
     </section>
   );
 }
 
+type HomeProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  imageUrl: string | null;
+};
+
 function ProductGrid({
   products,
   title,
 }: {
-  products: any[];
+  products: HomeProduct[];
   title?: string;
 }) {
-  if (products.length === 0) return null;
+  if (products.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mt-6 rounded-xl bg-white p-5 shadow-sm">
       {title && (
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-2xl font-black text-slate-900">{title}</h2>
+          <h2 className="text-2xl font-black text-slate-900">
+            {title}
+          </h2>
 
           <Link
             href="/products"
@@ -379,7 +405,10 @@ export default async function HomePage() {
   return (
     <main className="bg-slate-50">
       <section className="mx-auto max-w-7xl px-4 py-4">
-        <div className="flex gap-4 overflow-x-auto rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <nav
+          aria-label="Product categories"
+          className="flex gap-4 overflow-x-auto rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+        >
           {categories.map((item) => {
             const Icon = item.icon;
 
@@ -394,21 +423,33 @@ export default async function HomePage() {
               </Link>
             );
           })}
-        </div>
+        </nav>
 
         <PromoGrid />
 
-        <HomeSection section={sections[0]} previews={previews} />
+        <HomeSection
+          section={sections[0]}
+          previews={previews}
+        />
 
         <ProductGrid products={firstFourProducts} />
 
-        <HomeSection section={sections[1]} previews={previews} />
+        <HomeSection
+          section={sections[1]}
+          previews={previews}
+        />
 
         <ProductGrid products={secondFourProducts} />
 
-        <HomeSection section={sections[2]} previews={previews} />
+        <HomeSection
+          section={sections[2]}
+          previews={previews}
+        />
 
-        <ProductGrid products={remainingProducts} title="Recommended For You" />
+        <ProductGrid
+          products={remainingProducts}
+          title="Recommended For You"
+        />
       </section>
     </main>
   );

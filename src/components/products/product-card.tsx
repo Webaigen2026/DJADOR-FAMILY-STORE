@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 
 type Props = {
   product: {
@@ -24,76 +24,61 @@ export default function ProductCard({ product }: Props) {
   const image =
     product.imageUrl ||
     product.image ||
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80";
-
-  const originalPrice = Math.round(product.price * 1.25);
-  const discount = Math.round(
-    ((originalPrice - product.price) / originalPrice) * 100
-  );
+    "/images/product-placeholder.png";
 
   return (
-    <div className="group relative border-b border-slate-200 bg-white p-4 transition hover:shadow-md sm:p-5">
-      <button className="absolute right-3 top-3 z-10 rounded-full bg-white p-2 text-slate-400 shadow-sm hover:text-red-500 sm:right-5 sm:top-5">
+    <article className="group relative border-b border-slate-200 bg-white p-4 transition hover:bg-slate-50 sm:p-5">
+      <button
+        type="button"
+        aria-label={`Add ${product.name} to wishlist`}
+        className="absolute right-3 top-3 z-10 rounded-full border border-slate-200 bg-white p-2 text-slate-400 shadow-sm transition hover:border-red-200 hover:text-red-500 sm:right-5 sm:top-5"
+      >
         <Heart className="h-5 w-5" />
       </button>
 
-      <div className="grid gap-5 sm:grid-cols-[180px_1fr] md:grid-cols-[220px_1fr] md:gap-6">
+      <div className="grid gap-5 sm:grid-cols-[180px_1fr] md:grid-cols-[220px_1fr] md:gap-7">
         <Link
           href={`/products/${product.slug}`}
-          className="flex h-52 w-full items-center justify-center rounded-xl bg-slate-50 p-4 sm:h-56"
+          className="flex h-52 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-4 sm:h-56"
         >
           <img
             src={image}
             alt={product.name}
-            className="max-h-full max-w-full object-contain transition group-hover:scale-105"
+            className="max-h-full max-w-full object-contain transition duration-300 group-hover:scale-105"
           />
         </Link>
 
-        <div className="pr-0 md:pr-10">
+        <div className="flex flex-col justify-center pr-0 md:pr-12">
+          {product.category ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {product.category}
+            </p>
+          ) : null}
+
           <Link href={`/products/${product.slug}`}>
-            <h3 className="pr-10 text-base font-semibold text-slate-900 hover:text-blue-600 sm:text-lg">
+            <h3 className="mt-2 pr-10 text-xl font-bold text-slate-900 transition hover:text-blue-600">
               {product.name}
             </h3>
           </Link>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">
-              4.3 <Star className="h-3 w-3 fill-white" />
-            </span>
-            <span className="text-xs text-slate-500 sm:text-sm">
-              (2,431 Ratings & 318 Reviews)
-            </span>
-          </div>
+          <p className="mt-4 text-2xl font-bold text-slate-950">
+            {formatPrice(product.price)}
+          </p>
 
-          <ul className="mt-4 space-y-1 text-sm text-slate-600">
-            <li>• High quality product</li>
-            <li>• Fast delivery available</li>
-            <li>• 7 days replacement policy</li>
-            <li>• Secure payment and easy returns</li>
-          </ul>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+            View complete product information, available images, pricing, and purchase options.
+          </p>
 
           <div className="mt-5">
-            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
-              <p className="text-xl font-bold text-slate-900 sm:text-2xl">
-                {formatPrice(product.price)}
-              </p>
-              <p className="text-sm text-slate-400 line-through">
-                {formatPrice(originalPrice)}
-              </p>
-              <p className="text-sm font-semibold text-green-600">
-                {discount}% off
-              </p>
-            </div>
-
-            <p className="mt-1 text-sm font-medium text-green-600">
-              Free delivery
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              Bank offers available
-            </p>
+            <Link
+              href={`/products/${product.slug}`}
+              className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+            >
+              View Product
+            </Link>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

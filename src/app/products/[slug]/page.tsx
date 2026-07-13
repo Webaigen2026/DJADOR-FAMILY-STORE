@@ -14,6 +14,9 @@ type Product = {
   slug: string;
   price: number;
   description?: string | null;
+  brand?: string | null;
+  category?: string | null;
+  stock: number;
   imageUrl?: string | null;
   image?: string | null;
   images?: ProductImage[];
@@ -42,7 +45,9 @@ export default async function ProductDetail({
   if (!product) {
     return (
       <div className="mx-auto max-w-6xl px-6 py-20">
-        <h1 className="text-3xl font-bold">Product Not Found</h1>
+        <h1 className="text-3xl font-bold text-slate-900">
+          Product Not Found
+        </h1>
       </div>
     );
   }
@@ -53,27 +58,30 @@ export default async function ProductDetail({
       : [product.imageUrl || product.image || "/images/headphones.jpg"];
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-20">
-      <div className="grid gap-10 md:grid-cols-2">
-        {/* Product Gallery */}
-        <ProductGallery
-          images={galleryImages}
-          name={product.name}
-        />
-
-        {/* Product Details */}
-        <div>
-          <ProductInfo
+    <main className="bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-16">
+        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+          <ProductGallery
+            images={galleryImages}
             name={product.name}
-            price={product.price}
-            description={product.description || undefined}
           />
 
-          <div className="mt-6">
-            <AddToCartButton productId={product.id} />
+          <div>
+            <ProductInfo
+              name={product.name}
+              price={product.price}
+              description={product.description || undefined}
+              brand={product.brand || undefined}
+              category={product.category || undefined}
+              stock={product.stock}
+            />
+
+            <div className="mt-8 border-t border-slate-200 pt-6">
+              <AddToCartButton productId={product.id} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

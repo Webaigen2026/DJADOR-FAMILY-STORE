@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { STORE_CATEGORIES } from "../../lib/store-categories";
 
 function formatPrice(amount: number | string) {
   return new Intl.NumberFormat("en-US", {
@@ -133,12 +134,20 @@ imageUrls: [] as string[],
                   <label className="mb-2 block text-sm font-bold text-slate-800">
                     Category
                   </label>
-                  <input
-                    value={form.category}
-                    onChange={(e) => updateField("category", e.target.value)}
-                    placeholder="Beauty & Hair Care"
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
-                  />
+                  <select
+  required
+  value={form.category}
+  onChange={(e) => updateField("category", e.target.value)}
+  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
+>
+  <option value="">Select Category</option>
+
+  {STORE_CATEGORIES.map((category) => (
+    <option key={category.slug} value={category.slug}>
+      {category.label}
+    </option>
+  ))}
+</select>
                 </div>
 
                 <div>

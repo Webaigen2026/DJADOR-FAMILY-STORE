@@ -5,61 +5,50 @@ type Props = {
   subtotal: number;
 };
 
-export default function CartSummary({ totalItems, subtotal }: Props) {
-  const discount = Math.floor(subtotal * 0.1);
-  const deliveryCharge = 0;
-  const total = subtotal - discount + deliveryCharge;
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
 
-  const formatPrice = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+export default function CartSummary({ totalItems, subtotal }: Props) {
+  const shipping = 0;
+  const estimatedTotal = subtotal + shipping;
 
   return (
-    <aside className="border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 px-5 py-4">
+    <aside className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-6 py-5">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-          Price Details
+          Order Summary
         </p>
       </div>
 
-      <div className="space-y-4 px-5 py-4 text-sm">
+      <div className="space-y-4 px-6 py-5 text-sm">
         <div className="flex items-center justify-between text-slate-700">
-          <span>Price ({totalItems} items)</span>
+          <span>Items ({totalItems})</span>
           <span>{formatPrice(subtotal)}</span>
         </div>
 
         <div className="flex items-center justify-between text-slate-700">
-          <span>Discount</span>
-          <span className="text-emerald-600">
-            -{formatPrice(discount)}
-          </span>
+          <span>Shipping</span>
+          <span>Calculated at checkout</span>
         </div>
 
-        <div className="flex items-center justify-between text-slate-700">
-          <span>Delivery Charges</span>
-          <span className="text-emerald-600">Free</span>
-        </div>
-
-        <div className="border-t border-dashed border-slate-300 pt-4">
-          <div className="flex items-center justify-between text-lg font-bold text-slate-900">
-            <span>Total Amount</span>
-            <span>{formatPrice(total)}</span>
+        <div className="border-t border-slate-200 pt-4">
+          <div className="flex items-center justify-between text-lg font-bold text-slate-950">
+            <span>Estimated Total</span>
+            <span>{formatPrice(estimatedTotal)}</span>
           </div>
-        </div>
-
-        <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-          You save {formatPrice(discount)} on this order
         </div>
       </div>
 
-      <div className="border-t border-slate-200 px-5 py-4">
+      <div className="border-t border-slate-200 px-6 py-5">
         <Link
           href="/checkout"
-          className="inline-flex w-full items-center justify-center bg-yellow-400 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-yellow-300"
+          className="inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          Continue
+          Proceed to Checkout
         </Link>
       </div>
     </aside>
