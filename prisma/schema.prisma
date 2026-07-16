@@ -48,12 +48,13 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  cart          Cart?
-  orders        Order[]
-  accounts      Account[]
-  sessions      Session[]
-  otps          OTPCode[]
-  resetTokens   PasswordResetToken[]
+  cart        Cart?
+  orders      Order[]
+  reviews     Review[]
+  accounts    Account[]
+  sessions    Session[]
+  otps        OTPCode[]
+  resetTokens PasswordResetToken[]
 }
 
 model Product {
@@ -71,9 +72,15 @@ model Product {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  images        ProductImage[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  images     ProductImage[]
+  reviews    Review[]
+  variants   ProductVariant[]
+
+  @@index([category])
+  @@index([brand])
+  @@index([isActive])
 }
 
 model ProductImage {
@@ -82,7 +89,52 @@ model ProductImage {
   url       String
   createdAt DateTime @default(now())
 
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  size      String?
+  color     String?
+  sku       String?  @unique
+  price     Int?
+  stock     Int      @default(0)
+  imageUrl  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@index([productId, size])
+  @@index([productId, color])
+  @@index([isActive])
+}
+
+model Review {
+  id                 String   @id @default(cuid())
+  userId             String
+  productId          String
+  rating             Int
+  title              String?
+  comment            String
+  isVerifiedPurchase Boolean  @default(false)
+  isApproved         Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([productId, isApproved])
 }
 
 model Cart {
@@ -91,22 +143,30 @@ model Cart {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
-  cartId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  cartId        String
+  productId     String
+  variantId     String?
+  selectedSize  String?
+  selectedColor String?
+  selectionKey  String   @default("default")
+  quantity      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, selectionKey])
+  @@index([cartId])
+  @@index([productId])
+  @@index([variantId])
 }
 
 model Order {
@@ -125,24 +185,38 @@ model Order {
   trackingNumber  String?
   notes           String?
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items         OrderItem[]
-  payments      Payment[]
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Int
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  variantId   String?
+  size        String?
+  color       String?
+  quantity    Int
+  unitPrice   Int
+  productName String?
+  sku         String?
+  createdAt   DateTime @default(now())
 
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
 }
 
 model Payment {
@@ -155,7 +229,10 @@ model Payment {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  order             Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
 }
 
 model OTPCode {
@@ -168,7 +245,11 @@ model OTPCode {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([email, type])
+  @@index([expiresAt])
 }
 
 model PasswordResetToken {
@@ -179,7 +260,10 @@ model PasswordResetToken {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Account {
@@ -196,9 +280,10 @@ model Account {
   id_token          String?
   session_state     String?
 
-  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -207,7 +292,10 @@ model Session {
   userId       String
   expires      DateTime
 
-  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
 }
 
 model VerificationToken {
@@ -216,4 +304,5 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@index([expires])
 }

@@ -1,11 +1,35 @@
+import Link from "next/link";
+import {
+  ChevronRight,
+  Headphones,
+  RotateCcw,
+  ShieldCheck,
+  ShoppingBag,
+  Truck,
+} from "lucide-react";
+
 import ProductInfo from "../../../components/products/product-info";
 import AddToCartButton from "../../../components/products/add-to-cart-button";
 import ProductGallery from "../../../components/products/product-gallery";
+import ReviewSection from "../../../components/reviews/review-section";
 import { prisma } from "../../../lib/prisma";
 
 type ProductImage = {
   id: string;
   url: string;
+};
+
+type ProductReview = {
+  rating: number;
+};
+
+type ProductVariant = {
+  id: string;
+  size?: string | null;
+  color?: string | null;
+  stock: number;
+  price?: number | null;
+  imageUrl?: string | null;
 };
 
 type Product = {
@@ -20,17 +44,93 @@ type Product = {
   imageUrl?: string | null;
   image?: string | null;
   images?: ProductImage[];
+  reviews?: ProductReview[];
+  variants?: ProductVariant[];
 };
 
+type RelatedProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  imageUrl?: string | null;
+};
+
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
 async function getProduct(slug: string): Promise<Product | null> {
-  const product = await prisma.product.findUnique({
-    where: { slug },
+  return prisma.product.findUnique({
+    where: {
+      slug,
+    },
     include: {
       images: true,
+
+      variants: {
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          size: true,
+          color: true,
+          stock: true,
+          price: true,
+          imageUrl: true,
+        },
+      },
+
+      reviews: {
+        where: {
+          isApproved: true,
+        },
+        select: {
+          rating: true,
+        },
+      },
     },
   });
+}
 
-  return product;
+async function getRelatedProducts(
+  productId: string,
+  category?: string | null
+): Promise<RelatedProduct[]> {
+  if (!category) {
+    return [];
+  }
+
+  return prisma.product.findMany({
+    where: {
+      isActive: true,
+      category: {
+        equals: category,
+        mode: "insensitive",
+      },
+      id: {
+        not: productId,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 4,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      price: true,
+      imageUrl: true,
+    },
+  });
 }
 
 export default async function ProductDetail({
@@ -44,43 +144,266 @@ export default async function ProductDetail({
 
   if (!product) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-20">
-        <h1 className="text-3xl font-bold text-slate-900">
-          Product Not Found
-        </h1>
-      </div>
+      <main className="min-h-[70vh] bg-slate-50">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-20 text-center shadow-sm">
+            <h1 className="text-3xl font-black tracking-tight text-slate-950">
+              Product Not Found
+            </h1>
+
+            <p className="mt-4 text-slate-600">
+              The product you are looking for is unavailable.
+            </p>
+
+            <Link
+              href="/products"
+              className="mt-8 inline-flex rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Browse Products
+            </Link>
+          </div>
+        </div>
+      </main>
     );
   }
 
+  const reviewCount = product.reviews?.length ?? 0;
+
+  const averageRating =
+    reviewCount > 0
+      ? product.reviews!.reduce(
+          (total, review) => total + review.rating,
+          0
+        ) / reviewCount
+      : 0;
+
+  const relatedProducts = await getRelatedProducts(
+    product.id,
+    product.category
+  );
+
   const galleryImages =
     product.images && product.images.length > 0
-      ? product.images.map((img) => img.url)
-      : [product.imageUrl || product.image || "/images/headphones.jpg"];
+      ? product.images.map((image) => image.url)
+      : [
+          product.imageUrl ||
+            product.image ||
+            "/images/product-placeholder.png",
+        ];
 
   return (
-    <main className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-16">
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <ProductGallery
-            images={galleryImages}
-            name={product.name}
-          />
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        {/* BREADCRUMB */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 flex flex-wrap items-center gap-2 text-sm text-slate-500"
+        >
+          <Link
+            href="/"
+            className="font-medium transition hover:text-slate-950"
+          >
+            Home
+          </Link>
 
-          <div>
-            <ProductInfo
-              name={product.name}
-              price={product.price}
-              description={product.description || undefined}
-              brand={product.brand || undefined}
-              category={product.category || undefined}
-              stock={product.stock}
-            />
+          <ChevronRight className="h-4 w-4" />
 
-            <div className="mt-8 border-t border-slate-200 pt-6">
-              <AddToCartButton productId={product.id} />
+          {product.category ? (
+            <>
+              <Link
+                href={`/products?category=${encodeURIComponent(
+                  product.category
+                )}`}
+                className="font-medium transition hover:text-slate-950"
+              >
+                {product.category}
+              </Link>
+
+              <ChevronRight className="h-4 w-4" />
+            </>
+          ) : null}
+
+          {product.brand ? (
+            <>
+              <span className="font-medium">{product.brand}</span>
+              <ChevronRight className="h-4 w-4" />
+            </>
+          ) : null}
+
+          <span className="font-semibold text-slate-900">
+            {product.name}
+          </span>
+        </nav>
+
+        {/* MAIN PRODUCT CONTAINER */}
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+          <div className="grid items-start lg:grid-cols-[0.95fr_1.05fr]">
+            {/* LEFT: PRODUCT GALLERY */}
+            <div className="min-w-0 border-b border-slate-200 p-5 sm:p-7 lg:border-b-0 lg:border-r lg:p-9">
+              <ProductGallery
+                images={galleryImages}
+                name={product.name}
+              />
+            </div>
+
+            {/* RIGHT: PRODUCT INFORMATION */}
+            <div className="min-w-0 p-5 sm:p-8 lg:p-10">
+              <ProductInfo
+                name={product.name}
+                price={product.price}
+                description={product.description || undefined}
+                brand={product.brand || undefined}
+                category={product.category || undefined}
+                stock={product.stock}
+                averageRating={averageRating}
+                reviewCount={reviewCount}
+              />
+
+              {/* VARIANTS AND PURCHASE ACTIONS */}
+              <div className="mt-8 border-t border-slate-200 pt-8">
+                <AddToCartButton
+                  productId={product.id}
+                  stock={product.stock}
+                  variants={product.variants ?? []}
+                />
+              </div>
+
+              {/* SHOPPING INFORMATION */}
+              <div className="mt-8 border-t border-slate-200 pt-7">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Shopping information
+                </p>
+
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
+
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Secure checkout
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Payments are processed through a protected checkout
+                        flow.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Truck className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
+
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Delivery information
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Shipping options and charges appear during checkout.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <RotateCcw className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
+
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Order assistance
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Contact support if you need help with an eligible order.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Headphones className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
+
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        Customer support
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Support is available for product and checkout questions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* REVIEWS */}
+        <ReviewSection productId={product.id} />
+
+        {/* RELATED PRODUCTS */}
+        {relatedProducts.length > 0 ? (
+          <section className="mt-14">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                  More to discover
+                </p>
+
+                <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+                  Related Products
+                </h2>
+              </div>
+
+              <Link
+                href={`/products?category=${encodeURIComponent(
+                  product.category || ""
+                )}`}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+              >
+                View all
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {relatedProducts.map((relatedProduct) => (
+                <Link
+                  key={relatedProduct.id}
+                  href={`/products/${relatedProduct.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-4">
+                    {relatedProduct.imageUrl ? (
+                      <img
+                        src={relatedProduct.imageUrl}
+                        alt={relatedProduct.name}
+                        className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center text-center text-slate-400">
+                        <ShoppingBag className="h-8 w-8" />
+
+                        <span className="mt-2 text-sm font-medium">
+                          {relatedProduct.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-2 pt-4">
+                    <h3 className="line-clamp-2 text-sm font-bold leading-6 text-slate-900">
+                      {relatedProduct.name}
+                    </h3>
+
+                    <p className="mt-2 text-lg font-black text-slate-950">
+                      {formatPrice(relatedProduct.price)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );

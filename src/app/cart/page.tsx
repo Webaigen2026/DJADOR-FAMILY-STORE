@@ -1,5 +1,6 @@
 "use client";
 
+import { ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import CartItem from "../../components/cart/cart-item";
 import CartSummary from "../../components/cart/cart-summary";
@@ -45,7 +46,7 @@ export default function CartPage() {
           data.items || data.cart?.items || data.cartItems || [];
 
         setItems(resolvedItems);
-      } catch (error) {
+      } catch {
         setError("Something went wrong");
       } finally {
         setLoading(false);
@@ -73,33 +74,64 @@ export default function CartPage() {
   );
 
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+    () =>
+      items.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0
+      ),
     [items]
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        <section className="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                Shopping Cart
+              </p>
+
+              <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                Review your cart
+              </h1>
+
+              {!loading && !error && items.length > 0 ? (
+                <p className="mt-2 text-sm text-slate-600">
+                  {totalItems} {totalItems === 1 ? "item" : "items"} in your cart
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
         {loading ? (
-          <div className="border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
-            Loading cart...
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="h-2 w-28 animate-pulse rounded-full bg-slate-200" />
+
+            <p className="mt-5 text-sm font-medium text-slate-600">
+              Loading cart...
+            </p>
           </div>
         ) : error ? (
-          <div className="border border-red-200 bg-red-50 p-8 text-red-600 shadow-sm">
-            {error}
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 shadow-sm">
+            <h2 className="text-lg font-bold text-red-800">
+              Unable to load your cart
+            </h2>
+
+            <p className="mt-2 text-sm text-red-700">
+              {error}
+            </p>
           </div>
         ) : items.length === 0 ? (
           <EmptyCart />
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[1.7fr_0.9fr]">
+          <div className="grid gap-7 xl:grid-cols-[1.65fr_0.9fr]">
             <div className="space-y-4">
-              <div className="border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                <h1 className="text-2xl font-bold text-slate-900">My Cart</h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  {totalItems} item(s) in your cart
-                </p>
-              </div>
-
               {items.map((item) => (
                 <CartItem
                   key={item.id}
@@ -111,11 +143,14 @@ export default function CartPage() {
             </div>
 
             <div className="xl:sticky xl:top-24 xl:self-start">
-              <CartSummary totalItems={totalItems} subtotal={subtotal} />
+              <CartSummary
+                totalItems={totalItems}
+                subtotal={subtotal}
+              />
             </div>
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

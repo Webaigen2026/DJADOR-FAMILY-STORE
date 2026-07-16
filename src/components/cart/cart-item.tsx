@@ -1,5 +1,6 @@
 "use client";
 
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 type CartProduct = {
@@ -37,7 +38,9 @@ export default function CartItem({
   const [loading, setLoading] = useState(false);
 
   const image =
-    item.product.imageUrl || item.product.image || "/images/headphones.jpg";
+    item.product.imageUrl ||
+    item.product.image ||
+    "/images/product-placeholder.png";
 
   async function updateQuantity(nextQuantity: number) {
     if (nextQuantity < 1) return;
@@ -64,7 +67,7 @@ export default function CartItem({
       }
 
       onQuantityChange(item.id, nextQuantity);
-    } catch (error) {
+    } catch {
       alert("Something went wrong");
     } finally {
       setLoading(false);
@@ -93,7 +96,7 @@ export default function CartItem({
       }
 
       onRemove(item.id);
-    } catch (error) {
+    } catch {
       alert("Something went wrong");
     } finally {
       setLoading(false);
@@ -101,76 +104,77 @@ export default function CartItem({
   }
 
   return (
-    <div className="border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex gap-4">
-        <div className="h-28 w-28 overflow-hidden border bg-slate-50">
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="grid gap-4 sm:grid-cols-[120px_1fr] sm:gap-5">
+        <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 sm:h-28">
           <img
             src={image}
             alt={item.product.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
           />
         </div>
 
-        <div className="flex flex-1 flex-col justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">
-              {item.product.name}
-            </h3>
+        <div className="min-w-0">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-950">
+                {item.product.name}
+              </h3>
 
-            <span className="text-green-600 text-sm">
-  Special price
-</span>
-
-            <div className="mt-3 flex items-center gap-3">
-              <p className="text-xl font-bold">
+              <p className="mt-2 text-xl font-bold text-slate-950">
                 {formatPrice(item.product.price)}
               </p>
-              <span className="text-green-600 text-sm">
-                Special price
-              </span>
+            </div>
+
+            <div className="md:text-right">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Subtotal
+              </p>
+              <p className="mt-1 text-lg font-bold text-slate-950">
+                {formatPrice(item.product.price * item.quantity)}
+              </p>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-4">
-            <div className="flex border border-slate-300">
+          <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4">
+            <div className="inline-flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white">
               <button
+                type="button"
                 onClick={() => updateQuantity(item.quantity - 1)}
                 disabled={loading || item.quantity <= 1}
-                className="px-3 py-1 hover:bg-slate-100"
+                aria-label="Decrease quantity"
+                className="flex h-10 w-10 items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                -
+                <Minus className="h-4 w-4" />
               </button>
 
-              <span className="px-4 py-1 border-x">
+              <span className="flex h-10 min-w-12 items-center justify-center border-x border-slate-300 px-3 text-sm font-semibold text-slate-900">
                 {item.quantity}
               </span>
 
               <button
+                type="button"
                 onClick={() => updateQuantity(item.quantity + 1)}
                 disabled={loading}
-                className="px-3 py-1 hover:bg-slate-100"
+                aria-label="Increase quantity"
+                className="flex h-10 w-10 items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                +
+                <Plus className="h-4 w-4" />
               </button>
             </div>
 
             <button
+              type="button"
               onClick={removeItem}
               disabled={loading}
-              className="text-sm text-red-600 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <Trash2 className="h-4 w-4" />
               Remove
             </button>
           </div>
         </div>
-
-        <div className="hidden md:block text-right">
-          <p className="text-sm text-slate-500">Item Total</p>
-          <p className="text-lg font-bold">
-            {formatPrice(item.product.price * item.quantity)}
-          </p>
-        </div>
       </div>
-    </div>
+    </article>
   );
 }

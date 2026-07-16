@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function ProductGallery({
@@ -11,74 +12,103 @@ export default function ProductGallery({
 }) {
   const [index, setIndex] = useState(0);
 
-  const currentImage = images[index];
+  const safeImages =
+    images.length > 0 ? images : ["/images/product-placeholder.png"];
+
+  const currentImage = safeImages[index];
 
   function goNext() {
-    setIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setIndex((prev) =>
+      prev === safeImages.length - 1 ? 0 : prev + 1
+    );
   }
 
   function goPrev() {
-    setIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setIndex((prev) =>
+      prev === 0 ? safeImages.length - 1 : prev - 1
+    );
   }
 
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowRight") goNext();
+      if (event.key === "ArrowLeft") goPrev();
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [images.length]);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [safeImages.length]);
 
   return (
-    <div className="relative">
-      <div className="relative flex h-[420px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
+    <section className="h-fit rounded-[28px] border border-slate-200/80 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-6">
+      <div className="relative flex h-[340px] items-center justify-center overflow-hidden rounded-[22px] bg-gradient-to-br from-slate-50 via-white to-slate-100 sm:h-[440px] lg:h-[520px]">
         <img
           src={currentImage}
-          alt={name}
-            className="h-full w-full object-contain p-4"
+          alt={`${name} image ${index + 1}`}
+          className="h-full w-full object-contain p-6 transition duration-300 sm:p-8"
         />
 
-        {images.length > 1 && (
+        {safeImages.length > 1 ? (
           <>
             <button
               type="button"
               onClick={goPrev}
-              className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-2xl font-bold shadow-lg hover:bg-white"
+              aria-label="View previous product image"
+              className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-800 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white sm:left-5"
             >
-              ‹
+              <ChevronLeft className="h-5 w-5" />
             </button>
 
             <button
               type="button"
               onClick={goNext}
-              className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-2xl font-bold shadow-lg hover:bg-white"
+              aria-label="View next product image"
+              className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-800 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white sm:right-5"
             >
-              ›
+              <ChevronRight className="h-5 w-5" />
             </button>
           </>
-        )}
+        ) : null}
       </div>
 
-      {images.length > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {images.map((_, dotIndex) => (
+      {safeImages.length > 1 ? (
+        <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
+          {safeImages.map((image, imageIndex) => (
             <button
-              key={dotIndex}
+              key={`${image}-${imageIndex}`}
               type="button"
-              onClick={() => setIndex(dotIndex)}
-              className={`h-2 rounded-full transition-all ${
-                index === dotIndex ? "w-8 bg-slate-900" : "w-2 bg-slate-300"
+              onClick={() => setIndex(imageIndex)}
+              aria-label={`View product image ${imageIndex + 1}`}
+              className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 transition ${
+                index === imageIndex
+                  ? "border-slate-950 ring-2 ring-slate-950/10"
+                  : "border-slate-200 hover:border-slate-400"
               }`}
-            />
+            >
+              <img
+                src={image}
+                alt={`${name} thumbnail ${imageIndex + 1}`}
+                className="h-full w-full object-contain"
+              />
+            </button>
           ))}
         </div>
-      )}
+      ) : null}
 
-      <p className="mt-3 text-center text-sm text-slate-500">
-        {index + 1} / {images.length}
-      </p>
-    </div>
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-medium text-slate-500">
+        <span>
+          {safeImages.length === 1
+            ? "Product image"
+            : `${safeImages.length} product images`}
+        </span>
+
+        <span>
+          {index + 1} / {safeImages.length}
+        </span>
+      </div>
+    </section>
   );
 }
