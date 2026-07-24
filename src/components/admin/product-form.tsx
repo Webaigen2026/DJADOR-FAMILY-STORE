@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -14,6 +14,7 @@ type VariantForm = {
   stock: string;
   price: string;
   sku: string;
+  imageUrl: string;
   isActive: boolean;
 };
 
@@ -27,6 +28,7 @@ function createVariant(size = ""): VariantForm {
     stock: "",
     price: "",
     sku: "",
+    imageUrl: "",
     isActive: true,
   };
 }
@@ -43,11 +45,15 @@ export default function ProductForm() {
 
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVariantId, setUploadingVariantId] = useState<string | null>(
+    null
+  );
   const [hasVariants, setHasVariants] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     category: "",
+    subCategory: "",
     brand: "",
     description: "",
     price: "",
@@ -151,7 +157,7 @@ export default function ProductForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Unable to upload images.");
+        alert(data.error || "Unable to upload product images.");
         return;
       }
 
@@ -161,9 +167,44 @@ export default function ProductForm() {
       }
     } catch (error) {
       console.error("PRODUCT_IMAGE_UPLOAD_ERROR", error);
-      alert("Something went wrong while uploading images.");
+      alert("Something went wrong while uploading product images.");
     } finally {
       setUploadingImages(false);
+    }
+  }
+
+  async function uploadVariantImage(variantId: string, file: File) {
+    try {
+      setUploadingVariantId(variantId);
+
+      const uploadData = new FormData();
+      uploadData.append("files", file);
+
+      const response = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: uploadData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Unable to upload the variant image.");
+        return;
+      }
+
+      const uploadedUrl = Array.isArray(data.urls) ? data.urls[0] : null;
+
+      if (!uploadedUrl) {
+        alert("The upload finished, but no image URL was returned.");
+        return;
+      }
+
+      updateVariant(variantId, "imageUrl", uploadedUrl);
+    } catch (error) {
+      console.error("VARIANT_IMAGE_UPLOAD_ERROR", error);
+      alert("Something went wrong while uploading the variant image.");
+    } finally {
+      setUploadingVariantId(null);
     }
   }
 
@@ -175,15 +216,12 @@ export default function ProductForm() {
       return;
     }
 
-    if (
-      hasVariants &&
-      validVariants.some(
-        (variant) =>
-          !variant.size.trim() &&
-          !variant.color.trim()
-      )
-    ) {
-      alert("Each variant must have a size, color, or both.");
+    const duplicateSkus = validVariants
+      .map((variant) => variant.sku.trim())
+      .filter(Boolean);
+
+    if (new Set(duplicateSkus).size !== duplicateSkus.length) {
+      alert("Each variant SKU must be unique.");
       return;
     }
 
@@ -212,6 +250,7 @@ export default function ProductForm() {
                     ? Number(variant.price)
                     : null,
                 sku: variant.sku.trim() || null,
+                imageUrl: variant.imageUrl.trim() || null,
                 isActive: variant.isActive,
               }))
             : [],
@@ -291,7 +330,6 @@ export default function ProductForm() {
             </div>
 
             <div className="grid gap-6">
-              {/* NAME */}
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-800">
                   Product Name
@@ -307,52 +345,79 @@ export default function ProductForm() {
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
                 />
               </div>
+              <div className="grid gap-5 md:grid-cols-3">
+  <div>
+    <label className="mb-2 block text-sm font-bold text-slate-800">
+      Category
+    </label>
 
-              {/* CATEGORY AND BRAND */}
-              <div className="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-800">
-                    Category
-                  </label>
+    <select
+      required
+      value={form.category}
+      onChange={(event) => {
+        updateField("category", event.target.value);
+        updateField("subCategory", "");
+      }}
+      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
+    >
+      <option value="">Select Category</option>
 
-                  <select
-                    required
-                    value={form.category}
-                    onChange={(event) =>
-                      updateField("category", event.target.value)
-                    }
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
-                  >
-                    <option value="">Select Category</option>
+      {STORE_CATEGORIES.map((category) => (
+        <option key={category.slug} value={category.slug}>
+          {category.label}
+        </option>
+      ))}
+    </select>
+  </div>
 
-                    {STORE_CATEGORIES.map((category) => (
-                      <option
-                        key={category.slug}
-                        value={category.slug}
-                      >
-                        {category.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+  <div>
+    <label className="mb-2 block text-sm font-bold text-slate-800">
+      Sub Category
+    </label>
 
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-800">
-                    Brand
-                  </label>
+    <select
+      required
+      value={form.subCategory}
+      disabled={!form.category}
+      onChange={(event) =>
+        updateField("subCategory", event.target.value)
+      }
+      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+    >
+      <option value="">
+        {form.category
+          ? "Select Sub Category"
+          : "Select Category First"}
+      </option>
 
-                  <input
-                    value={form.brand}
-                    onChange={(event) =>
-                      updateField("brand", event.target.value)
-                    }
-                    placeholder="Nike"
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
-                  />
-                </div>
-              </div>
+      {(
+        STORE_CATEGORIES.find(
+          (category) => category.slug === form.category
+        )?.subCategories ?? []
+      ).map((subCategory) => (
+        <option key={subCategory} value={subCategory}>
+          {subCategory}
+        </option>
+      ))}
+    </select>
+  </div>
 
-              {/* DESCRIPTION */}
+  <div>
+    <label className="mb-2 block text-sm font-bold text-slate-800">
+      Brand
+    </label>
+
+    <input
+      value={form.brand}
+      onChange={(event) =>
+        updateField("brand", event.target.value)
+      }
+      placeholder="Nike"
+      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
+    />
+  </div>
+</div>
+
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-800">
                   Description
@@ -370,7 +435,6 @@ export default function ProductForm() {
                 />
               </div>
 
-              {/* PRICE */}
               <div className="grid gap-5 md:grid-cols-3">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-800">
@@ -434,7 +498,6 @@ export default function ProductForm() {
                 </div>
               </div>
 
-              {/* VARIANTS SWITCH */}
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5">
                 <label className="flex cursor-pointer items-start justify-between gap-5">
                   <div>
@@ -459,7 +522,6 @@ export default function ProductForm() {
                 </label>
               </div>
 
-              {/* VARIANT MANAGER */}
               {hasVariants ? (
                 <section className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 sm:p-6">
                   <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -469,8 +531,8 @@ export default function ProductForm() {
                       </h3>
 
                       <p className="mt-1 text-sm text-slate-600">
-                        Configure size, color, inventory, SKU, and optional
-                        pricing.
+                        Configure size, color, inventory, image, SKU, and
+                        optional pricing.
                       </p>
                     </div>
 
@@ -496,9 +558,19 @@ export default function ProductForm() {
                               {index + 1}
                             </span>
 
-                            <p className="font-bold text-slate-900">
-                              Variant
-                            </p>
+                            <div>
+                              <p className="font-bold text-slate-900">
+                                Variant
+                              </p>
+
+                              {variant.color || variant.size ? (
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                  {[variant.color, variant.size]
+                                    .filter(Boolean)
+                                    .join(" / ")}
+                                </p>
+                              ) : null}
+                            </div>
                           </div>
 
                           <button
@@ -623,6 +695,60 @@ export default function ProductForm() {
                             />
                           </div>
                         </div>
+
+                        <div className="mt-4 border-t border-slate-100 pt-4">
+                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Variant Image
+                          </label>
+
+                          <div className="grid gap-4 sm:grid-cols-[1fr_110px] sm:items-center">
+                            <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-center transition hover:border-indigo-500 hover:bg-indigo-50">
+                              <ImagePlus className="h-5 w-5 text-slate-500" />
+
+                              <span className="mt-2 text-sm font-semibold text-slate-700">
+                                {uploadingVariantId === variant.id
+                                  ? "Uploading..."
+                                  : "Upload variant image"}
+                              </span>
+
+                              <span className="mt-1 text-xs text-slate-500">
+                                Use the image matching this color.
+                              </span>
+
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={uploadingVariantId === variant.id}
+                                className="hidden"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+
+                                  if (file) {
+                                    uploadVariantImage(variant.id, file);
+                                  }
+
+                                  event.target.value = "";
+                                }}
+                              />
+                            </label>
+
+                            <div className="flex h-24 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                              {variant.imageUrl ? (
+                                <img
+                                  src={variant.imageUrl}
+                                  alt={`${variant.color || "Variant"} ${
+                                    variant.size || ""
+                                  }`}
+                                  className="h-full w-full object-contain p-2"
+                                />
+                              ) : (
+                                <span className="px-2 text-center text-xs text-slate-400">
+                                  No variant image
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -639,10 +765,9 @@ export default function ProductForm() {
                 </section>
               ) : null}
 
-              {/* IMAGES */}
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-800">
-                  Product Images
+                  Main Product Images
                 </label>
 
                 <input
@@ -687,7 +812,6 @@ export default function ProductForm() {
                 ) : null}
               </div>
 
-              {/* PUBLISH */}
               <label className="flex items-center justify-between rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4">
                 <div>
                   <p className="text-sm font-bold text-slate-900">
@@ -709,7 +833,6 @@ export default function ProductForm() {
                 />
               </label>
 
-              {/* ACTIONS */}
               <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:justify-end">
                 <Link
                   href="/admin/products"
@@ -719,7 +842,11 @@ export default function ProductForm() {
                 </Link>
 
                 <button
-                  disabled={loading || uploadingImages}
+                  disabled={
+                    loading ||
+                    uploadingImages ||
+                    Boolean(uploadingVariantId)
+                  }
                   type="submit"
                   className="inline-flex min-h-12 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-700 px-8 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -729,7 +856,6 @@ export default function ProductForm() {
             </div>
           </form>
 
-          {/* PREVIEW */}
           <aside className="h-fit rounded-[28px] border border-white/60 bg-white/90 p-6 shadow-2xl shadow-purple-200/50 backdrop-blur-xl lg:sticky lg:top-24">
             <div className="mb-5 flex items-center justify-between">
               <div>

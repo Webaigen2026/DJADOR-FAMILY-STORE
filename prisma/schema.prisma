@@ -66,6 +66,7 @@ model Product {
   originalPrice Int?
   brand         String?
   category      String?
+  subCategory   String?
   imageUrl      String?
   stock         Int      @default(0)
   isActive      Boolean  @default(true)
@@ -79,6 +80,7 @@ model Product {
   variants   ProductVariant[]
 
   @@index([category])
+  @@index([subCategory])
   @@index([brand])
   @@index([isActive])
 }

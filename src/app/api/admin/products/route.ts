@@ -29,6 +29,7 @@ export async function POST(req: Request) {
     const originalPrice = Number(body.originalPrice || 0);
     const brand = String(body.brand || "").trim();
     const category = String(body.category || "").trim();
+    const subCategory = String(body.subCategory || "").trim();
 
     const imageUrls = Array.isArray(body.imageUrls)
       ? body.imageUrls
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
           originalPrice > 0 ? originalPrice : null,
         brand: brand || null,
         category: category || null,
+        subCategory: subCategory || null,
         imageUrl: mainImageUrl || null,
         stock,
         isActive,

@@ -23,6 +23,10 @@ type Props = {
   productId: string;
   stock: number;
   variants?: ProductVariant[];
+
+  // Used by ProductPurchaseSection to control the gallery.
+  selectedColor?: string;
+  onColorChange?: (color: string) => void;
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -52,18 +56,30 @@ export default function AddToCartButton({
   productId,
   stock,
   variants = [],
+  selectedColor: controlledColor,
+  onColorChange,
 }: Props) {
   const router = useRouter();
 
-  const [selectedColor, setSelectedColor] = useState("");
+  const [internalColor, setInternalColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
+
   const [loadingAction, setLoadingAction] = useState<
     "cart" | "buy" | null
   >(null);
 
+  /*
+   * When the parent component provides selectedColor,
+   * use it. Otherwise, use internal state.
+   */
+  const selectedColor = controlledColor ?? internalColor;
+
   const activeVariants = useMemo(
-    () => variants.filter((variant) => variant.stock > 0),
+    () =>
+      variants.filter(
+        (variant) => variant.stock > 0
+      ),
     [variants]
   );
 
@@ -72,15 +88,23 @@ export default function AddToCartButton({
       new Set(
         activeVariants
           .map((variant) => variant.color?.trim())
-          .filter((color): color is string => Boolean(color))
+          .filter(
+            (color): color is string =>
+              Boolean(color)
+          )
       )
     );
   }, [activeVariants]);
 
+  /*
+   * Show only the sizes available for the selected color.
+   */
   const sizes = useMemo(() => {
     const relevantVariants = selectedColor
       ? activeVariants.filter(
-          (variant) => variant.color === selectedColor
+          (variant) =>
+            variant.color?.trim().toLowerCase() ===
+            selectedColor.trim().toLowerCase()
         )
       : activeVariants;
 
@@ -88,11 +112,17 @@ export default function AddToCartButton({
       new Set(
         relevantVariants
           .map((variant) => variant.size?.trim())
-          .filter((size): size is string => Boolean(size))
+          .filter(
+            (size): size is string =>
+              Boolean(size)
+          )
       )
     );
   }, [activeVariants, selectedColor]);
 
+  /*
+   * Find the exact selected size/color combination.
+   */
   const selectedVariant = useMemo(() => {
     if (activeVariants.length === 0) {
       return null;
@@ -100,12 +130,20 @@ export default function AddToCartButton({
 
     return (
       activeVariants.find((variant) => {
+        const variantColor =
+          variant.color?.trim().toLowerCase() || "";
+
+        const variantSize =
+          variant.size?.trim().toLowerCase() || "";
+
         const colorMatches = colors.length
-          ? variant.color === selectedColor
+          ? variantColor ===
+            selectedColor.trim().toLowerCase()
           : true;
 
         const sizeMatches = sizes.length
-          ? variant.size === selectedSize
+          ? variantSize ===
+            selectedSize.trim().toLowerCase()
           : true;
 
         return colorMatches && sizeMatches;
@@ -142,7 +180,12 @@ export default function AddToCartButton({
     availableStock > 0;
 
   function handleColorSelect(color: string) {
-    setSelectedColor(color);
+    if (onColorChange) {
+      onColorChange(color);
+    } else {
+      setInternalColor(color);
+    }
+
     setSelectedSize("");
     setQuantity(1);
   }
@@ -153,7 +196,9 @@ export default function AddToCartButton({
   }
 
   function decreaseQuantity() {
-    setQuantity((current) => Math.max(1, current - 1));
+    setQuantity((current) =>
+      Math.max(1, current - 1)
+    );
   }
 
   function increaseQuantity() {
@@ -162,7 +207,9 @@ export default function AddToCartButton({
     );
   }
 
-  async function addProductToCart(action: "cart" | "buy") {
+  async function addProductToCart(
+    action: "cart" | "buy"
+  ) {
     if (!canPurchase || loadingAction) {
       return;
     }
@@ -177,25 +224,34 @@ export default function AddToCartButton({
             selectedSize || "default",
           ].join("-");
 
-      const response = await fetch("/api/cart/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productId,
-          variantId: selectedVariant?.id || null,
-          selectedSize: selectedSize || null,
-          selectedColor: selectedColor || null,
-          selectionKey,
-          quantity,
-        }),
-      });
+      const response = await fetch(
+        "/api/cart/add",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId,
+            variantId:
+              selectedVariant?.id || null,
+            selectedSize:
+              selectedSize || null,
+            selectedColor:
+              selectedColor || null,
+            selectionKey,
+            quantity,
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        alert(data.error || "Failed to add product to cart.");
+        alert(
+          data.error ||
+            "Failed to add product to cart."
+        );
         return;
       }
 
@@ -207,7 +263,10 @@ export default function AddToCartButton({
         router.push("/cart");
       }
     } catch (error) {
-      console.error("ADD_TO_CART_ERROR", error);
+      console.error(
+        "ADD_TO_CART_ERROR",
+        error
+      );
 
       alert(
         "Something went wrong while adding the product to your cart."
@@ -236,14 +295,22 @@ export default function AddToCartButton({
 
           <div className="flex flex-wrap gap-4">
             {colors.map((color) => {
-              const selected = selectedColor === color;
-              const colorValue = getColorValue(color);
+              const selected =
+                selectedColor
+                  .trim()
+                  .toLowerCase() ===
+                color.trim().toLowerCase();
+
+              const colorValue =
+                getColorValue(color);
 
               return (
                 <button
                   key={color}
                   type="button"
-                  onClick={() => handleColorSelect(color)}
+                  onClick={() =>
+                    handleColorSelect(color)
+                  }
                   aria-label={`Select ${color}`}
                   aria-pressed={selected}
                   className="group flex min-w-16 flex-col items-center gap-2"
@@ -255,13 +322,17 @@ export default function AddToCartButton({
                         : "border-slate-300 group-hover:border-slate-500"
                     }`}
                     style={{
-                      backgroundColor: colorValue,
+                      backgroundColor:
+                        colorValue,
                     }}
                   >
                     {selected ? (
                       <span
                         className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                          color.toLowerCase() === "white"
+                          color
+                            .trim()
+                            .toLowerCase() ===
+                          "white"
                             ? "bg-slate-950 text-white"
                             : "bg-white/90 text-slate-950"
                         }`}
@@ -305,25 +376,51 @@ export default function AddToCartButton({
 
           <div className="flex flex-wrap gap-3">
             {sizes.map((size) => {
-              const matchingVariant = activeVariants.find(
-                (variant) =>
-                  variant.size === size &&
-                  (!selectedColor ||
-                    variant.color === selectedColor)
-              );
+              const matchingVariant =
+                activeVariants.find(
+                  (variant) => {
+                    const variantSize =
+                      variant.size
+                        ?.trim()
+                        .toLowerCase();
+
+                    const variantColor =
+                      variant.color
+                        ?.trim()
+                        .toLowerCase();
+
+                    return (
+                      variantSize ===
+                        size
+                          .trim()
+                          .toLowerCase() &&
+                      (!selectedColor ||
+                        variantColor ===
+                          selectedColor
+                            .trim()
+                            .toLowerCase())
+                    );
+                  }
+                );
 
               const disabled =
                 !matchingVariant ||
                 matchingVariant.stock <= 0;
 
-              const selected = selectedSize === size;
+              const selected =
+                selectedSize
+                  .trim()
+                  .toLowerCase() ===
+                size.trim().toLowerCase();
 
               return (
                 <button
                   key={size}
                   type="button"
                   disabled={disabled}
-                  onClick={() => handleSizeSelect(size)}
+                  onClick={() =>
+                    handleSizeSelect(size)
+                  }
                   className={`flex h-12 min-w-14 items-center justify-center rounded-lg border px-4 text-sm font-bold transition ${
                     selected
                       ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-100"
@@ -358,10 +455,14 @@ export default function AddToCartButton({
               </span>
             )}
 
-            {selectedColor || selectedSize ? (
+            {selectedColor ||
+            selectedSize ? (
               <span className="text-sm text-slate-500">
                 {selectedColor || ""}
-                {selectedColor && selectedSize ? " / " : ""}
+                {selectedColor &&
+                selectedSize
+                  ? " / "
+                  : ""}
                 {selectedSize || ""}
               </span>
             ) : null}
@@ -412,11 +513,13 @@ export default function AddToCartButton({
       ) : null}
 
       {/* SELECTION WARNING */}
-      {!isOutOfStock && !hasSelectedOptions ? (
+      {!isOutOfStock &&
+      !hasSelectedOptions ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
           <p className="text-sm font-semibold text-red-600">
             Please select{" "}
-            {requiresColor && requiresSize
+            {requiresColor &&
+            requiresSize
               ? "a color and size"
               : requiresColor
               ? "a color"
@@ -430,8 +533,13 @@ export default function AddToCartButton({
       <div className="grid gap-3 sm:grid-cols-2">
         <button
           type="button"
-          onClick={() => addProductToCart("cart")}
-          disabled={!canPurchase || Boolean(loadingAction)}
+          onClick={() =>
+            addProductToCart("cart")
+          }
+          disabled={
+            !canPurchase ||
+            Boolean(loadingAction)
+          }
           className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           <ShoppingCart className="h-5 w-5" />
@@ -443,8 +551,13 @@ export default function AddToCartButton({
 
         <button
           type="button"
-          onClick={() => addProductToCart("buy")}
-          disabled={!canPurchase || Boolean(loadingAction)}
+          onClick={() =>
+            addProductToCart("buy")
+          }
+          disabled={
+            !canPurchase ||
+            Boolean(loadingAction)
+          }
           className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-yellow-400 px-6 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           <ShoppingBag className="h-5 w-5" />

@@ -1,16 +1,7 @@
 import Link from "next/link";
-import {
-  ChevronRight,
-  Headphones,
-  RotateCcw,
-  ShieldCheck,
-  ShoppingBag,
-  Truck,
-} from "lucide-react";
+import { ChevronRight, ShoppingBag } from "lucide-react";
 
-import ProductInfo from "../../../components/products/product-info";
-import AddToCartButton from "../../../components/products/add-to-cart-button";
-import ProductGallery from "../../../components/products/product-gallery";
+import ProductPurchaseSection from "../../../components/products/product-purchase-section";
 import ReviewSection from "../../../components/reviews/review-section";
 import { prisma } from "../../../lib/prisma";
 
@@ -111,18 +102,23 @@ async function getRelatedProducts(
   return prisma.product.findMany({
     where: {
       isActive: true,
+
       category: {
         equals: category,
         mode: "insensitive",
       },
+
       id: {
         not: productId,
       },
     },
+
     orderBy: {
       createdAt: "desc",
     },
+
     take: 4,
+
     select: {
       id: true,
       name: true,
@@ -146,8 +142,8 @@ export default async function ProductDetail({
     return (
       <main className="min-h-[70vh] bg-slate-50">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-20 text-center shadow-sm">
-            <h1 className="text-3xl font-black tracking-tight text-slate-950">
+          <div className="border border-slate-200 bg-white px-6 py-20 text-center shadow-sm">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-950">
               Product Not Found
             </h1>
 
@@ -157,7 +153,7 @@ export default async function ProductDetail({
 
             <Link
               href="/products"
-              className="mt-8 inline-flex rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="mt-8 inline-flex rounded-lg bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Browse Products
             </Link>
@@ -225,7 +221,10 @@ export default async function ProductDetail({
 
           {product.brand ? (
             <>
-              <span className="font-medium">{product.brand}</span>
+              <span className="font-medium">
+                {product.brand}
+              </span>
+
               <ChevronRight className="h-4 w-4" />
             </>
           ) : null}
@@ -235,121 +234,34 @@ export default async function ProductDetail({
           </span>
         </nav>
 
-        {/* MAIN PRODUCT CONTAINER */}
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
-          <div className="grid items-start lg:grid-cols-[0.95fr_1.05fr]">
-            {/* LEFT: PRODUCT GALLERY */}
-            <div className="min-w-0 border-b border-slate-200 p-5 sm:p-7 lg:border-b-0 lg:border-r lg:p-9">
-              <ProductGallery
-                images={galleryImages}
-                name={product.name}
-              />
-            </div>
-
-            {/* RIGHT: PRODUCT INFORMATION */}
-            <div className="min-w-0 p-5 sm:p-8 lg:p-10">
-              <ProductInfo
-                name={product.name}
-                price={product.price}
-                description={product.description || undefined}
-                brand={product.brand || undefined}
-                category={product.category || undefined}
-                stock={product.stock}
-                averageRating={averageRating}
-                reviewCount={reviewCount}
-              />
-
-              {/* VARIANTS AND PURCHASE ACTIONS */}
-              <div className="mt-8 border-t border-slate-200 pt-8">
-                <AddToCartButton
-                  productId={product.id}
-                  stock={product.stock}
-                  variants={product.variants ?? []}
-                />
-              </div>
-
-              {/* SHOPPING INFORMATION */}
-              <div className="mt-8 border-t border-slate-200 pt-7">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-                  Shopping information
-                </p>
-
-                <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
-
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        Secure checkout
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Payments are processed through a protected checkout
-                        flow.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Truck className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
-
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        Delivery information
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Shipping options and charges appear during checkout.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <RotateCcw className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
-
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        Order assistance
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Contact support if you need help with an eligible order.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Headphones className="mt-0.5 h-5 w-5 shrink-0 text-slate-700" />
-
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        Customer support
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Support is available for product and checkout questions.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* PRODUCT GALLERY + INFO + VARIANTS */}
+        <ProductPurchaseSection
+          productId={product.id}
+          name={product.name}
+          price={product.price}
+          description={product.description || undefined}
+          brand={product.brand || undefined}
+          category={product.category || undefined}
+          stock={product.stock}
+          averageRating={averageRating}
+          reviewCount={reviewCount}
+          galleryImages={galleryImages}
+          variants={product.variants ?? []}
+        />
 
         {/* REVIEWS */}
         <ReviewSection productId={product.id} />
 
         {/* RELATED PRODUCTS */}
         {relatedProducts.length > 0 ? (
-          <section className="mt-14">
+          <section className="mt-14 border-t border-slate-200 pt-10">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
                   More to discover
                 </p>
 
-                <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
                   Related Products
                 </h2>
               </div>
@@ -370,9 +282,9 @@ export default async function ProductDetail({
                 <Link
                   key={relatedProduct.id}
                   href={`/products/${relatedProduct.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
+                  className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
                 >
-                  <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-slate-50 p-4">
+                  <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-slate-50 p-4">
                     {relatedProduct.imageUrl ? (
                       <img
                         src={relatedProduct.imageUrl}
@@ -395,7 +307,7 @@ export default async function ProductDetail({
                       {relatedProduct.name}
                     </h3>
 
-                    <p className="mt-2 text-lg font-black text-slate-950">
+                    <p className="mt-2 text-lg font-bold text-slate-950">
                       {formatPrice(relatedProduct.price)}
                     </p>
                   </div>
