@@ -7,6 +7,7 @@ import {
 
 import ProductFilters from "../../components/products/product-filters";
 import ProductGrid from "../../components/products/product-grid";
+import ProductSort from "../../components/products/product-sort";
 import { prisma } from "../../lib/prisma";
 
 import {
@@ -726,6 +727,7 @@ export default async function ProductsPage({
     inStock?: string;
     minPrice?: string;
     maxPrice?: string;
+    sort?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -757,6 +759,8 @@ export default async function ProductsPage({
   const maxPrice =
     parsePrice(params.maxPrice);
 
+    const sort = params.sort || "newest";
+
   const {
     products,
     categories,
@@ -764,8 +768,8 @@ export default async function ProductsPage({
     productTypes,
   } = await getProducts(category);
 
-  const filteredProducts = products.filter(
-    (product) => {
+  const filteredProducts = products
+  .filter((product) => {
       const productCategory =
         resolveStorefrontCategory(
           product.category,
@@ -827,17 +831,36 @@ export default async function ProductsPage({
           ? product.price <= maxPrice
           : true;
 
-      return (
-        matchesCategory &&
-        matchesBrand &&
-        matchesProductType &&
-        matchesSearch &&
-        matchesAvailability &&
-        matchesMinimumPrice &&
-        matchesMaximumPrice
-      );
-    },
-  );
+          return (
+            matchesCategory &&
+            matchesBrand &&
+            matchesProductType &&
+            matchesSearch &&
+            matchesAvailability &&
+            matchesMinimumPrice &&
+            matchesMaximumPrice
+          );
+        },
+      )
+      .sort((a, b) => {
+        switch (sort) {
+          case "price-low":
+            return a.price - b.price;
+    
+          case "price-high":
+            return b.price - a.price;
+    
+          case "name":
+            return a.name.localeCompare(b.name);
+    
+          case "newest":
+          default:
+            return (
+              new Date(b.createdAt).getTime() -
+              new Date(a.createdAt).getTime()
+            );
+        }
+      });
 
   const selectedCategory =
     getStorefrontCategory(category);
@@ -964,27 +987,7 @@ export default async function ProductsPage({
               Sort by:
             </label>
 
-            <select
-              defaultValue="newest"
-              aria-label="Sort products"
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-slate-500"
-            >
-              <option value="newest">
-                Newest arrivals
-              </option>
-
-              <option value="price-low">
-                Price: Low to High
-              </option>
-
-              <option value="price-high">
-                Price: High to Low
-              </option>
-
-              <option value="name">
-                Name: A to Z
-              </option>
-            </select>
+            <ProductSort value={sort} />
           </div>
         </section>
 
