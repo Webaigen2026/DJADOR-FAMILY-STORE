@@ -10,9 +10,11 @@ import {
   useState,
 } from "react";
 import {
+  AlertCircle,
   Bell,
   ChevronDown,
   CircleHelp,
+  CheckCircle2,
   Heart,
   Home,
   LayoutGrid,
@@ -47,6 +49,18 @@ type NavbarProps = {
   wishlistCount?: number;
 };
 
+type LocationResult = {
+  label: string;
+  deliverable: boolean;
+  area?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  latitude?: string;
+  longitude?: string;
+};
+
 type IconComponent = ComponentType<{ className?: string }>;
 
 export default function Navbar({
@@ -67,7 +81,9 @@ export default function Navbar({
     DEFAULT_DELIVERY_LABEL,
   );
   const [locationError, setLocationError] = useState("");
-  const [locating, setLocating] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [resolvedLocation, setResolvedLocation] =
+    useState<LocationResult | null>(null);
 
   const accountRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
@@ -83,11 +99,21 @@ export default function Navbar({
 
     if (!savedLocation) return;
 
-    setDeliveryLabel(savedLocation);
+    try {
+      const parsedLocation = JSON.parse(savedLocation) as LocationResult;
 
-    const savedZip = savedLocation.match(/\b\d{5}(?:-\d{4})?\b/)?.[0];
-    if (savedZip) {
-      setZipCode(savedZip);
+      if (!parsedLocation.label || parsedLocation.deliverable !== true) {
+        throw new Error("Invalid or unsupported saved location");
+      }
+
+      setDeliveryLabel(parsedLocation.label);
+      setZipCode(parsedLocation.postcode || "");
+    } catch {
+      // Remove values saved by older versions because they were not
+      // verified as Massachusetts delivery locations.
+      window.localStorage.removeItem(DELIVERY_STORAGE_KEY);
+      setDeliveryLabel(DEFAULT_DELIVERY_LABEL);
+      setZipCode("");
     }
   }, []);
 
@@ -163,10 +189,11 @@ export default function Navbar({
   function closeLocationModal() {
     setLocationModalOpen(false);
     setLocationError("");
-    setLocating(false);
+    setLocationLoading(false);
+    setResolvedLocation(null);
   }
 
-  function saveZipCode(event: FormEvent<HTMLFormElement>) {
+  async function saveZipCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const normalizedZip = zipCode.trim();
@@ -176,18 +203,67 @@ export default function Navbar({
       return;
     }
 
-    const label = `ZIP ${normalizedZip}`;
+    try {
+      setLocationLoading(true);
+      setLocationError("");
+      setResolvedLocation(null);
 
-    window.localStorage.setItem(DELIVERY_STORAGE_KEY, label);
-    setDeliveryLabel(label);
-    setLocationError("");
-    setLocationModalOpen(false);
+      const response = await fetch(
+        `/api/location?zip=${encodeURIComponent(normalizedZip)}`,
+      );
+
+      const data = (await response.json()) as
+        | LocationResult
+        | { error: string };
+
+      if (!response.ok || "error" in data) {
+        throw new Error(
+          "error" in data
+            ? data.error
+            : "We could not find that ZIP code.",
+        );
+      }
+
+      const stateName = data.state?.trim().toLowerCase() || "";
+      const isMassachusetts =
+        stateName === "massachusetts" ||
+        data.deliverable === true;
+
+      setResolvedLocation({
+        ...data,
+        deliverable: isMassachusetts,
+      });
+    } catch (error) {
+      setLocationError(
+        error instanceof Error
+          ? error.message
+          : "We could not find that ZIP code.",
+      );
+    } finally {
+      setLocationLoading(false);
+    }
   }
 
   function clearSavedLocation() {
     window.localStorage.removeItem(DELIVERY_STORAGE_KEY);
     setDeliveryLabel(DEFAULT_DELIVERY_LABEL);
     setZipCode("");
+    setResolvedLocation(null);
+    setLocationError("");
+  }
+
+  function confirmResolvedLocation() {
+    if (!resolvedLocation?.deliverable) return;
+
+    window.localStorage.setItem(
+      DELIVERY_STORAGE_KEY,
+      JSON.stringify(resolvedLocation),
+    );
+
+    setDeliveryLabel(resolvedLocation.label);
+    setZipCode(resolvedLocation.postcode || "");
+    setLocationModalOpen(false);
+    setResolvedLocation(null);
     setLocationError("");
   }
 
@@ -199,17 +275,52 @@ export default function Navbar({
       return;
     }
 
-    setLocating(true);
+    setLocationLoading(true);
     setLocationError("");
+    setResolvedLocation(null);
 
     navigator.geolocation.getCurrentPosition(
-      () => {
-        const label = "Current location";
+      async (position) => {
+        try {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
 
-        window.localStorage.setItem(DELIVERY_STORAGE_KEY, label);
-        setDeliveryLabel(label);
-        setLocationModalOpen(false);
-        setLocating(false);
+          const response = await fetch(
+            `/api/location?lat=${encodeURIComponent(
+              latitude,
+            )}&lon=${encodeURIComponent(longitude)}`,
+          );
+
+          const data = (await response.json()) as
+            | LocationResult
+            | { error: string };
+
+          if (!response.ok || "error" in data) {
+            throw new Error(
+              "error" in data
+                ? data.error
+                : "We could not determine your address.",
+            );
+          }
+
+          const stateName = data.state?.trim().toLowerCase() || "";
+      const isMassachusetts =
+        stateName === "massachusetts" ||
+        data.deliverable === true;
+
+      setResolvedLocation({
+        ...data,
+        deliverable: isMassachusetts,
+      });
+        } catch (error) {
+          setLocationError(
+            error instanceof Error
+              ? error.message
+              : "We could not determine your address.",
+          );
+        } finally {
+          setLocationLoading(false);
+        }
       },
       (error) => {
         let message =
@@ -217,7 +328,7 @@ export default function Navbar({
 
         if (error.code === error.PERMISSION_DENIED) {
           message =
-            "Location access was denied. Allow location access or enter a ZIP code.";
+            "Location permission was denied. Allow location access or enter a ZIP code.";
         }
 
         if (error.code === error.TIMEOUT) {
@@ -226,7 +337,7 @@ export default function Navbar({
         }
 
         setLocationError(message);
-        setLocating(false);
+        setLocationLoading(false);
       },
       {
         enableHighAccuracy: true,
@@ -831,8 +942,8 @@ export default function Navbar({
                 </h2>
 
                 <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                  Add a ZIP code so we can show accurate availability and
-                  delivery estimates.
+                  DJADOR currently delivers only within Massachusetts. Enter a ZIP
+                  code or use your current location to check availability.
                 </p>
               </div>
 
@@ -867,6 +978,7 @@ export default function Navbar({
                   onChange={(event) => {
                     setZipCode(event.target.value);
                     setLocationError("");
+                    setResolvedLocation(null);
                   }}
                   placeholder="Enter ZIP code"
                   maxLength={10}
@@ -885,9 +997,12 @@ export default function Navbar({
 
               <button
                 type="submit"
-                className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                disabled={locationLoading}
+                className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save delivery location
+                {locationLoading
+                  ? "Finding your location..."
+                  : "Check Massachusetts delivery"}
               </button>
             </form>
 
@@ -902,14 +1017,89 @@ export default function Navbar({
             <button
               type="button"
               onClick={useCurrentLocation}
-              disabled={locating}
+              disabled={locationLoading}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3.5 text-sm font-bold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LocateFixed
-                className={`h-5 w-5 ${locating ? "animate-pulse" : ""}`}
+                className={`h-5 w-5 ${
+                  locationLoading ? "animate-pulse" : ""
+                }`}
               />
-              {locating ? "Finding your location..." : "Use my current location"}
+              {locationLoading
+                ? "Finding your address..."
+                : "Use my current location"}
             </button>
+
+            {resolvedLocation &&
+              (resolvedLocation.deliverable ? (
+                <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-xl bg-emerald-100 p-2 text-emerald-800">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                        Delivery available
+                      </p>
+
+                      <p className="mt-1 text-base font-black text-emerald-950">
+                        {resolvedLocation.label}
+                      </p>
+
+                      {(resolvedLocation.area ||
+                        resolvedLocation.city ||
+                        resolvedLocation.state) && (
+                        <p className="mt-2 text-sm leading-6 text-emerald-800">
+                          {[
+                            resolvedLocation.area,
+                            resolvedLocation.city,
+                            resolvedLocation.state,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                      )}
+
+                      {resolvedLocation.postcode && (
+                        <p className="mt-1 text-sm text-emerald-800">
+                          ZIP code: {resolvedLocation.postcode}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={confirmResolvedLocation}
+                    className="mt-4 w-full rounded-xl bg-emerald-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800"
+                  >
+                    Deliver to this location
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-xl bg-rose-100 p-2 text-rose-700">
+                      <AlertCircle className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-rose-700">
+                        Delivery not available
+                      </p>
+
+                      <p className="mt-1 text-base font-black text-rose-950">
+                        {resolvedLocation.label}
+                      </p>
+
+                      <p className="mt-2 text-sm leading-6 text-rose-800">
+                        DJADOR currently delivers only within Massachusetts. Please enter a Massachusetts ZIP code.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
 
             {deliveryLabel !== DEFAULT_DELIVERY_LABEL && (
               <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">

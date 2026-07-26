@@ -41,12 +41,17 @@ model User {
   id            String   @id @default(cuid())
   name          String?
   email         String   @unique
+  phone         String?
   password      String?
   role          UserRole @default(USER)
   image         String?
   emailVerified Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  language      String   @default("en")
+  currency      String   @default("USD")
+  theme         String   @default("system")
 
   cart        Cart?
   orders      Order[]
