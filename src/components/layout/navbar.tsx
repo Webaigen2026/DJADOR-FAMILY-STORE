@@ -937,7 +937,7 @@ export default function Navbar({
               {session?.user ? (
                 <button
                   type="button"
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onClick={() => signOut({ callbackUrl: "https://www.djadorfamilystore.com/login" })}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
                 >
                   <LogOut className="h-4 w-4" />
