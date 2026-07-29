@@ -286,7 +286,7 @@ export default function ProductForm() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-            Add New Products
+            Add New Product
           </h1>
 
           <p className="mt-3 text-base text-slate-600 sm:text-lg">

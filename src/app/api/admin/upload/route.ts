@@ -54,7 +54,8 @@ export async function POST(req: Request) {
           .slice(2)}-${safeName}`,
         file,
         {
-          access: "public",
+          // Store is configured as private; public access is rejected by the API.
+          access: "private",
         }
       );
 
