@@ -60,7 +60,7 @@ export default function AdminLayout({
               className="text-3xl font-black text-white"
             >
               DJADOR
-              <span className="text-emerald-500">FAMILY STORE</span>
+              <span className="text-emerald-500">FAMILY Store.</span>
             </Link>
           )}
 
