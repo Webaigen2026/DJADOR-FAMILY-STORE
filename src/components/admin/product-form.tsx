@@ -475,7 +475,7 @@ export default function ProductForm() {
 
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-800">
-                    Base Stock
+                    Base Stock.
                   </label>
 
                   <input
