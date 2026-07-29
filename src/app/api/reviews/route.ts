@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         order: {
           userId,
           status: {
-            in: ["PAID", "FULFILLED"],
+            in: ["PAID", "COMPLETED"],
           },
         },
       },

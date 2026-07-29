@@ -18,18 +18,38 @@ enum UserRole {
 }
 
 enum OrderStatus {
-  PENDING
+  PENDING_PAYMENT
   PAID
-  FAILED
+  PROCESSING
+  PACKING
+  READY_TO_SHIP
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  COMPLETED
   CANCELLED
-  FULFILLED
+  RETURN_REQUESTED
+  RETURNED
+  REFUNDED
 }
 
 enum PaymentStatus {
   PENDING
-  PAID
+  AUTHORIZED
+  CAPTURED
   FAILED
   REFUNDED
+  PARTIALLY_REFUNDED
+}
+enum ShipmentStatus {
+  CREATED
+  LABEL_CREATED
+  PICKED_UP
+  IN_TRANSIT
+  ARRIVED_AT_HUB
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
 }
 
 enum OtpType {
@@ -180,7 +200,7 @@ model Order {
   id            String        @id @default(cuid())
   userId        String
   totalAmount   Int
-  status        OrderStatus   @default(PENDING)
+  status OrderStatus @default(PENDING_PAYMENT)
   paymentStatus PaymentStatus @default(PENDING)
 
   shippingName    String?

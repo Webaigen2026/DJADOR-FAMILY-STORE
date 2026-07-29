@@ -4,9 +4,19 @@ import { prisma } from "../../../../lib/prisma";
 
 function Badge({ value }: { value: string }) {
   const style =
-    value === "PAID" || value === "FULFILLED"
+    value === "PAID" ||
+    value === "CAPTURED" ||
+    value === "AUTHORIZED" ||
+    value === "COMPLETED" ||
+    value === "DELIVERED" ||
+    value === "FULFILLED"
       ? "bg-green-100 text-green-700"
-      : value === "FAILED" || value === "CANCELLED" || value === "REFUNDED"
+      : value === "FAILED" ||
+          value === "CANCELLED" ||
+          value === "REFUNDED" ||
+          value === "RETURNED" ||
+          value === "RETURN_REQUESTED" ||
+          value === "PARTIALLY_REFUNDED"
       ? "bg-red-100 text-red-700"
       : "bg-yellow-100 text-yellow-700";
 
@@ -29,7 +39,7 @@ async function markFulfilled(orderId: string) {
 
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: "FULFILLED" },
+    data: { status: "COMPLETED" },
   });
 
   redirect(`/admin/orders/${orderId}`);
@@ -124,7 +134,7 @@ export default async function OrderDetailsPage({
     order.user?.email?.charAt(0).toUpperCase() ||
     "C";
 
-  const isFulfilled = order.status === "FULFILLED";
+  const isFulfilled = order.status === "COMPLETED";
   const isCancelled = order.status === "CANCELLED";
 
   return (
@@ -296,7 +306,7 @@ export default async function OrderDetailsPage({
                 <div className="flex gap-4">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                      order.paymentStatus === "PAID"
+                      order.paymentStatus === "CAPTURED"
                         ? "bg-green-100 text-green-700"
                         : order.paymentStatus === "FAILED"
                         ? "bg-red-100 text-red-700"
@@ -316,14 +326,14 @@ export default async function OrderDetailsPage({
                 <div className="flex gap-4">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                      order.status === "FULFILLED"
+                      order.status === "COMPLETED"
                         ? "bg-green-100 text-green-700"
                         : order.status === "CANCELLED"
                         ? "bg-red-100 text-red-700"
                         : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
-                    {order.status === "FULFILLED"
+                    {order.status === "COMPLETED"
                       ? "✓"
                       : order.status === "CANCELLED"
                       ? "×"

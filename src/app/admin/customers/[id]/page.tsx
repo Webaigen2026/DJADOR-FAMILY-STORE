@@ -10,9 +10,19 @@ function formatMoney(amount: number) {
 
 function Badge({ value }: { value: string }) {
   const style =
-    value === "PAID" || value === "FULFILLED"
+    value === "PAID" ||
+    value === "CAPTURED" ||
+    value === "AUTHORIZED" ||
+    value === "COMPLETED" ||
+    value === "DELIVERED" ||
+    value === "FULFILLED"
       ? "bg-green-100 text-green-700"
-      : value === "FAILED" || value === "CANCELLED" || value === "REFUNDED"
+      : value === "FAILED" ||
+          value === "CANCELLED" ||
+          value === "REFUNDED" ||
+          value === "RETURNED" ||
+          value === "RETURN_REQUESTED" ||
+          value === "PARTIALLY_REFUNDED"
       ? "bg-red-100 text-red-700"
       : "bg-yellow-100 text-yellow-700";
 
@@ -65,11 +75,11 @@ export default async function CustomerDetailsPage({
       : 0;
 
   const completedOrders = customer.orders.filter(
-    (order) => order.status === "FULFILLED"
+    (order) => order.status === "COMPLETED"
   ).length;
 
   const pendingOrders = customer.orders.filter(
-    (order) => order.status === "PENDING"
+    (order) => order.status === "PENDING_PAYMENT"
   ).length;
 
   const cancelledOrders = customer.orders.filter(

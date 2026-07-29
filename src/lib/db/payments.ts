@@ -28,7 +28,13 @@ export async function createPaymentRecord(data: {
   provider: string;
   providerPaymentId?: string;
   amount: number;
-  status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  status:
+    | "PENDING"
+    | "AUTHORIZED"
+    | "CAPTURED"
+    | "FAILED"
+    | "REFUNDED"
+    | "PARTIALLY_REFUNDED";
 }) {
   return prisma.payment.create({
     data,
@@ -37,8 +43,27 @@ export async function createPaymentRecord(data: {
 
 export async function updateOrderPaymentStatus(
   orderId: string,
-  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED",
-  orderStatus: "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "FULFILLED"
+  paymentStatus:
+    | "PENDING"
+    | "AUTHORIZED"
+    | "CAPTURED"
+    | "FAILED"
+    | "REFUNDED"
+    | "PARTIALLY_REFUNDED",
+  orderStatus:
+    | "PENDING_PAYMENT"
+    | "PAID"
+    | "PROCESSING"
+    | "PACKING"
+    | "READY_TO_SHIP"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "RETURN_REQUESTED"
+    | "RETURNED"
+    | "REFUNDED"
 ) {
   return prisma.order.update({
     where: { id: orderId.trim() },

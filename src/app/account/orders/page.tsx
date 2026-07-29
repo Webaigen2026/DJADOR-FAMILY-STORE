@@ -27,11 +27,19 @@ type OrdersPageProps = {
 };
 
 type OrderStatusValue =
-  | "PENDING"
+  | "PENDING_PAYMENT"
   | "PAID"
-  | "FAILED"
+  | "PROCESSING"
+  | "PACKING"
+  | "READY_TO_SHIP"
+  | "SHIPPED"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "COMPLETED"
   | "CANCELLED"
-  | "FULFILLED";
+  | "RETURN_REQUESTED"
+  | "RETURNED"
+  | "REFUNDED";
 
 const statusFilters = [
   {
@@ -40,7 +48,7 @@ const statusFilters = [
   },
   {
     label: "Order placed",
-    value: "PENDING",
+    value: "PENDING_PAYMENT",
   },
   {
     label: "Processing",
@@ -48,15 +56,11 @@ const statusFilters = [
   },
   {
     label: "Delivered",
-    value: "FULFILLED",
+    value: "COMPLETED",
   },
   {
     label: "Cancelled",
     value: "CANCELLED",
-  },
-  {
-    label: "Failed",
-    value: "FAILED",
   },
 ] as const;
 
@@ -90,6 +94,11 @@ function getOrderNumber(orderId: string) {
 function getStatusDetails(status: OrderStatusValue) {
   switch (status) {
     case "PAID":
+    case "PROCESSING":
+    case "PACKING":
+    case "READY_TO_SHIP":
+    case "SHIPPED":
+    case "OUT_FOR_DELIVERY":
       return {
         label: "Processing",
         title: "Your order is being prepared.",
@@ -100,7 +109,8 @@ function getStatusDetails(status: OrderStatusValue) {
         icon: Truck,
       };
 
-    case "FULFILLED":
+    case "DELIVERED":
+    case "COMPLETED":
       return {
         label: "Delivered",
         title: "Your order has been completed.",
@@ -122,7 +132,9 @@ function getStatusDetails(status: OrderStatusValue) {
         icon: XCircle,
       };
 
-    case "FAILED":
+    case "RETURN_REQUESTED":
+    case "RETURNED":
+    case "REFUNDED":
       return {
         label: "Failed",
         title: "This order could not be completed.",
@@ -147,10 +159,17 @@ function getStatusDetails(status: OrderStatusValue) {
 }
 
 function getPaymentDetails(
-  status: "PENDING" | "PAID" | "FAILED" | "REFUNDED"
+  status:
+    | "PENDING"
+    | "AUTHORIZED"
+    | "CAPTURED"
+    | "FAILED"
+    | "REFUNDED"
+    | "PARTIALLY_REFUNDED"
 ) {
   switch (status) {
-    case "PAID":
+    case "CAPTURED":
+    case "AUTHORIZED":
       return {
         label: "Payment completed",
         className: "text-emerald-700",
@@ -163,6 +182,7 @@ function getPaymentDetails(
       };
 
     case "REFUNDED":
+    case "PARTIALLY_REFUNDED":
       return {
         label: "Payment refunded",
         className: "text-purple-700",
@@ -255,7 +275,7 @@ export default async function OrdersPage({
   const totalOrders = orders.length;
 
   const placedOrders = orders.filter(
-    (order) => order.status === "PENDING"
+    (order) => order.status === "PENDING_PAYMENT"
   ).length;
 
   const processingOrders = orders.filter(
@@ -263,7 +283,7 @@ export default async function OrdersPage({
   ).length;
 
   const deliveredOrders = orders.filter(
-    (order) => order.status === "FULFILLED"
+    (order) => order.status === "COMPLETED"
   ).length;
 
   const stats = [

@@ -7,7 +7,18 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: "DJADOR FAMILY STORE",
   description: "Your trusted online shopping destination",
+
+  icons: {
+    icon: [
+      { url: "/images/logo/favicon.ico" },
+      { url: "/images/logo/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/logo/favicon-16x16.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/images/logo/favicon-32x32.png",
+    shortcut: "/images/logo/favicon.ico",
+  },
 };
+
 
 export default function RootLayout({
   children,
@@ -15,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning>
-      <body className="min-h-screen bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-white">
+    <html lang="en">
+      <body className="min-h-screen bg-white text-slate-900 antialiased">
         <Providers>
           <div className="flex min-h-screen flex-col">
             <Navbar />

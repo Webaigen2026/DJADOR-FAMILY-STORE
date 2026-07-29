@@ -8,11 +8,19 @@ import {
   } from "lucide-react";
   
   type OrderStatus =
-    | "PENDING"
+    | "PENDING_PAYMENT"
     | "PAID"
-    | "FAILED"
+    | "PROCESSING"
+    | "PACKING"
+    | "READY_TO_SHIP"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
     | "CANCELLED"
-    | "FULFILLED";
+    | "RETURN_REQUESTED"
+    | "RETURNED"
+    | "REFUNDED";
   
   type Props = {
     status: OrderStatus;
@@ -60,24 +68,32 @@ import {
   
   function getCurrentStep(status: OrderStatus) {
     switch (status) {
-      case "PENDING":
+      case "PENDING_PAYMENT":
         return 0;
   
       case "PAID":
+      case "PROCESSING":
+      case "PACKING":
+      case "READY_TO_SHIP":
+      case "SHIPPED":
+      case "OUT_FOR_DELIVERY":
         return 1;
   
-      case "FULFILLED":
+      case "DELIVERED":
+      case "COMPLETED":
         return 2;
   
-      case "FAILED":
       case "CANCELLED":
+      case "RETURN_REQUESTED":
+      case "RETURNED":
+      case "REFUNDED":
         return 0;
     }
   }
   
   function getStatusMessage(status: OrderStatus) {
     switch (status) {
-      case "PENDING":
+      case "PENDING_PAYMENT":
         return {
           title: "Your order has been placed",
           description:
@@ -89,6 +105,11 @@ import {
         };
   
       case "PAID":
+      case "PROCESSING":
+      case "PACKING":
+      case "READY_TO_SHIP":
+      case "SHIPPED":
+      case "OUT_FOR_DELIVERY":
         return {
           title: "Your order is being processed",
           description:
@@ -99,7 +120,8 @@ import {
           icon: PackageSearch,
         };
   
-      case "FULFILLED":
+      case "DELIVERED":
+      case "COMPLETED":
         return {
           title: "Your order is complete",
           description:
@@ -121,7 +143,9 @@ import {
           icon: XCircle,
         };
   
-      case "FAILED":
+      case "RETURN_REQUESTED":
+      case "RETURNED":
+      case "REFUNDED":
         return {
           title: "This order could not be completed",
           description:
@@ -144,7 +168,10 @@ import {
     const StatusMessageIcon = statusMessage.icon;
   
     const isStopped =
-      status === "CANCELLED" || status === "FAILED";
+      status === "CANCELLED" ||
+      status === "RETURN_REQUESTED" ||
+      status === "RETURNED" ||
+      status === "REFUNDED";
   
     return (
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -374,7 +401,7 @@ import {
                   <span className="font-bold text-slate-900">
                     {status === "CANCELLED"
                       ? "cancelled"
-                      : "failed"}
+                      : "closed"}
                   </span>
                   .
                 </p>

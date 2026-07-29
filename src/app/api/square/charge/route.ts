@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (order.paymentStatus === "PAID") {
+    if (order.paymentStatus === "CAPTURED") {
       return NextResponse.json(
         { success: false, error: "Order is already paid" },
         { status: 400 }
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         status: "FAILED",
       });
 
-      await updateOrderPaymentStatus(order.id, "FAILED", "FAILED");
+      await updateOrderPaymentStatus(order.id, "FAILED", "CANCELLED");
 
       const errorMessage =
         squareData?.errors
@@ -118,10 +118,10 @@ export async function POST(req: NextRequest) {
       provider: "square",
       providerPaymentId: squareData?.payment?.id,
       amount: order.totalAmount,
-      status: "PAID",
+      status: "CAPTURED",
     });
 
-    await updateOrderPaymentStatus(order.id, "PAID", "PAID");
+    await updateOrderPaymentStatus(order.id, "CAPTURED", "PAID");
 
     return NextResponse.json({
       success: true,

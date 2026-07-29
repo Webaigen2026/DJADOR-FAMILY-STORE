@@ -10,9 +10,19 @@ function formatMoney(amount: number) {
 
 function Badge({ value }: { value: string }) {
   const style =
-    value === "PAID" || value === "FULFILLED"
+    value === "PAID" ||
+    value === "CAPTURED" ||
+    value === "AUTHORIZED" ||
+    value === "COMPLETED" ||
+    value === "DELIVERED" ||
+    value === "FULFILLED"
       ? "bg-green-100 text-green-700"
-      : value === "FAILED" || value === "CANCELLED" || value === "REFUNDED"
+      : value === "FAILED" ||
+          value === "CANCELLED" ||
+          value === "REFUNDED" ||
+          value === "RETURNED" ||
+          value === "RETURN_REQUESTED" ||
+          value === "PARTIALLY_REFUNDED"
       ? "bg-red-100 text-red-700"
       : "bg-yellow-100 text-yellow-700";
 
@@ -112,8 +122,8 @@ export default async function AdminAnalyticsPage() {
   const outOfStock = products.filter((p) => p.stock === 0).length;
   const lowStockProducts = products.filter((p) => p.stock > 0 && p.stock <= 5);
 
-  const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
-  const fulfilledOrders = orders.filter((o) => o.status === "FULFILLED").length;
+  const pendingOrders = orders.filter((o) => o.status === "PENDING_PAYMENT").length;
+  const fulfilledOrders = orders.filter((o) => o.status === "COMPLETED").length;
   const cancelledOrders = orders.filter((o) => o.status === "CANCELLED").length;
   const failedPayments = orders.filter(
     (o) => o.paymentStatus === "FAILED"

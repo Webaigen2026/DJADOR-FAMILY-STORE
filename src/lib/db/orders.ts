@@ -67,7 +67,7 @@ export async function createOrderFromCart(userId: string) {
       data: {
         userId,
         totalAmount,
-        status: "PENDING",
+        status: "PENDING_PAYMENT",
         paymentStatus: "PENDING",
         items: {
           create: cart.items.map((item) => ({

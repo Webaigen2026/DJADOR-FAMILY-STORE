@@ -3,9 +3,19 @@ import { prisma } from "../../../lib/prisma";
 
 function Badge({ value }: { value: string }) {
   const style =
-    value === "PAID" || value === "FULFILLED"
+    value === "PAID" ||
+    value === "CAPTURED" ||
+    value === "AUTHORIZED" ||
+    value === "COMPLETED" ||
+    value === "DELIVERED" ||
+    value === "FULFILLED"
       ? "bg-green-100 text-green-700"
-      : value === "FAILED" || value === "CANCELLED" || value === "REFUNDED"
+      : value === "FAILED" ||
+          value === "CANCELLED" ||
+          value === "REFUNDED" ||
+          value === "RETURNED" ||
+          value === "RETURN_REQUESTED" ||
+          value === "PARTIALLY_REFUNDED"
       ? "bg-red-100 text-red-700"
       : "bg-yellow-100 text-yellow-700";
 
@@ -83,20 +93,30 @@ export default async function AdminOrdersPage({
         status !== "all"
           ? {
               status: status as
-                | "PENDING"
+                | "PENDING_PAYMENT"
                 | "PAID"
-                | "FAILED"
+                | "PROCESSING"
+                | "PACKING"
+                | "READY_TO_SHIP"
+                | "SHIPPED"
+                | "OUT_FOR_DELIVERY"
+                | "DELIVERED"
+                | "COMPLETED"
                 | "CANCELLED"
-                | "FULFILLED",
+                | "RETURN_REQUESTED"
+                | "RETURNED"
+                | "REFUNDED",
             }
           : {},
         payment !== "all"
           ? {
               paymentStatus: payment as
                 | "PENDING"
-                | "PAID"
+                | "AUTHORIZED"
+                | "CAPTURED"
                 | "FAILED"
-                | "REFUNDED",
+                | "REFUNDED"
+                | "PARTIALLY_REFUNDED",
             }
           : {},
       ],
@@ -114,22 +134,21 @@ export default async function AdminOrdersPage({
   const allOrders = await prisma.order.findMany();
 
   const revenue = allOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-  const pending = allOrders.filter((o) => o.status === "PENDING").length;
+  const pending = allOrders.filter((o) => o.status === "PENDING_PAYMENT").length;
   const failed = allOrders.filter((o) => o.paymentStatus === "FAILED").length;
   const refunded = allOrders.filter((o) => o.paymentStatus === "REFUNDED").length;
 
   const statusFilters = [
     { label: "All", value: "all" },
-    { label: "Pending", value: "PENDING" },
-    { label: "Fulfilled", value: "FULFILLED" },
+    { label: "Pending", value: "PENDING_PAYMENT" },
+    { label: "Fulfilled", value: "COMPLETED" },
     { label: "Cancelled", value: "CANCELLED" },
-    { label: "Failed", value: "FAILED" },
   ];
 
   const paymentFilters = [
     { label: "All Payments", value: "all" },
     { label: "Payment Pending", value: "PENDING" },
-    { label: "Paid", value: "PAID" },
+    { label: "Paid", value: "CAPTURED" },
     { label: "Failed", value: "FAILED" },
     { label: "Refunded", value: "REFUNDED" },
   ];

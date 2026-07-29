@@ -8,7 +8,9 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
+import { useCart } from "../cart/cart-context";
 
 type ProductVariant = {
   id: string;
@@ -60,6 +62,8 @@ export default function AddToCartButton({
   onColorChange,
 }: Props) {
   const router = useRouter();
+  const { status } = useSession();
+  const { refreshCart } = useCart();
 
   const [internalColor, setInternalColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
@@ -179,6 +183,12 @@ export default function AddToCartButton({
     hasSelectedOptions &&
     availableStock > 0;
 
+  // Pure booleans from props + initial state — identical on server and client.
+  const increaseDisabled =
+    !hasSelectedOptions || quantity >= availableStock;
+  const purchaseDisabled =
+    !canPurchase || Boolean(loadingAction);
+
   function handleColorSelect(color: string) {
     if (onColorChange) {
       onColorChange(color);
@@ -255,6 +265,7 @@ export default function AddToCartButton({
         return;
       }
 
+      await refreshCart();
       router.refresh();
 
       if (action === "buy") {
@@ -277,6 +288,13 @@ export default function AddToCartButton({
   }
 
   return (
+    <form
+      className="contents"
+      autoComplete="off"
+      onSubmit={(event) => {
+        event.preventDefault();
+      }}
+    >
     <div className="space-y-8">
       {/* COLOR */}
       {colors.length > 0 ? (
@@ -499,10 +517,7 @@ export default function AddToCartButton({
             <button
               type="button"
               onClick={increaseQuantity}
-              disabled={
-                !hasSelectedOptions ||
-                quantity >= availableStock
-              }
+              disabled={increaseDisabled}
               className="flex h-12 w-12 items-center justify-center transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
               aria-label="Increase quantity"
             >
@@ -533,13 +548,19 @@ export default function AddToCartButton({
       <div className="grid gap-3 sm:grid-cols-2">
         <button
           type="button"
-          onClick={() =>
-            addProductToCart("cart")
-          }
-          disabled={
-            !canPurchase ||
-            Boolean(loadingAction)
-          }
+          onClick={() => {
+            if (status === "loading") {
+              return;
+            }
+
+            if (status !== "authenticated") {
+              router.push("/login");
+              return;
+            }
+
+            void addProductToCart("cart");
+          }}
+          disabled={purchaseDisabled}
           className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           <ShoppingCart className="h-5 w-5" />
@@ -551,13 +572,19 @@ export default function AddToCartButton({
 
         <button
           type="button"
-          onClick={() =>
-            addProductToCart("buy")
-          }
-          disabled={
-            !canPurchase ||
-            Boolean(loadingAction)
-          }
+          onClick={() => {
+            if (status === "loading") {
+              return;
+            }
+
+            if (status !== "authenticated") {
+              router.push("/login");
+              return;
+            }
+
+            void addProductToCart("buy");
+          }}
+          disabled={purchaseDisabled}
           className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-yellow-400 px-6 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           <ShoppingBag className="h-5 w-5" />
@@ -566,7 +593,9 @@ export default function AddToCartButton({
             ? "Processing..."
             : "Buy Now"}
         </button>
+   
       </div>
     </div>
+    </form>
   );
 }

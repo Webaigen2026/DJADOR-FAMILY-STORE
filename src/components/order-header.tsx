@@ -9,17 +9,27 @@ import {
   } from "lucide-react";
   
   type OrderStatus =
-    | "PENDING"
+    | "PENDING_PAYMENT"
     | "PAID"
-    | "FAILED"
+    | "PROCESSING"
+    | "PACKING"
+    | "READY_TO_SHIP"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
     | "CANCELLED"
-    | "FULFILLED";
+    | "RETURN_REQUESTED"
+    | "RETURNED"
+    | "REFUNDED";
   
   type PaymentStatus =
     | "PENDING"
-    | "PAID"
+    | "AUTHORIZED"
+    | "CAPTURED"
     | "FAILED"
-    | "REFUNDED";
+    | "REFUNDED"
+    | "PARTIALLY_REFUNDED";
   
   type Props = {
     order: {
@@ -55,7 +65,7 @@ import {
   
   function getOrderStatus(status: OrderStatus) {
     switch (status) {
-      case "PENDING":
+      case "PENDING_PAYMENT":
         return {
           title: "Order Placed",
           color:
@@ -64,14 +74,27 @@ import {
         };
   
       case "PAID":
+      case "PROCESSING":
+      case "PACKING":
+      case "READY_TO_SHIP":
         return {
           title: "Processing",
           color:
             "bg-blue-50 text-blue-700 border border-blue-200",
           icon: PackageSearch,
         };
+
+      case "SHIPPED":
+      case "OUT_FOR_DELIVERY":
+        return {
+          title: "Shipped",
+          color:
+            "bg-blue-50 text-blue-700 border border-blue-200",
+          icon: Truck,
+        };
   
-      case "FULFILLED":
+      case "DELIVERED":
+      case "COMPLETED":
         return {
           title: "Delivered",
           color:
@@ -79,9 +102,11 @@ import {
           icon: PackageCheck,
         };
   
-      case "FAILED":
+      case "RETURN_REQUESTED":
+      case "RETURNED":
+      case "REFUNDED":
         return {
-          title: "Failed",
+          title: "Returned",
           color:
             "bg-red-50 text-red-700 border border-red-200",
           icon: XCircle,
@@ -99,10 +124,12 @@ import {
   
   function getPaymentStatus(status: PaymentStatus) {
     switch (status) {
-      case "PAID":
+      case "CAPTURED":
+      case "AUTHORIZED":
         return "Paid";
   
       case "REFUNDED":
+      case "PARTIALLY_REFUNDED":
         return "Refunded";
   
       case "FAILED":

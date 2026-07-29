@@ -15,11 +15,19 @@ import {
 } from "lucide-react";
 
 type OrderStatus =
-  | "PENDING"
+  | "PENDING_PAYMENT"
   | "PAID"
-  | "FAILED"
+  | "PROCESSING"
+  | "PACKING"
+  | "READY_TO_SHIP"
+  | "SHIPPED"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "COMPLETED"
   | "CANCELLED"
-  | "FULFILLED";
+  | "RETURN_REQUESTED"
+  | "RETURNED"
+  | "REFUNDED";
 
 type Props = {
   orderId: string;
@@ -116,7 +124,7 @@ export default function OrderActions({
         </button>
 
         {/* Return */}
-        {orderStatus === "FULFILLED" && (
+        {orderStatus === "COMPLETED" && (
           <button className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
             <RefreshCcw className="h-5 w-5" />
             Request Return

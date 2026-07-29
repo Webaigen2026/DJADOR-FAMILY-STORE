@@ -53,6 +53,8 @@ function getGreeting() {
 
 function getOrderStatus(status: string) {
   switch (status) {
+    case "COMPLETED":
+    case "DELIVERED":
     case "FULFILLED":
       return {
         label: "Delivered",
@@ -60,11 +62,17 @@ function getOrderStatus(status: string) {
       };
 
     case "PAID":
+    case "PROCESSING":
+    case "PACKING":
+    case "READY_TO_SHIP":
+    case "SHIPPED":
+    case "OUT_FOR_DELIVERY":
       return {
         label: "Processing",
         className: "bg-blue-50 text-blue-700",
       };
 
+    case "PENDING_PAYMENT":
     case "PENDING":
       return {
         label: "Pending",
@@ -77,6 +85,9 @@ function getOrderStatus(status: string) {
         className: "bg-red-50 text-red-700",
       };
 
+    case "RETURN_REQUESTED":
+    case "RETURNED":
+    case "REFUNDED":
     case "FAILED":
       return {
         label: "Failed",

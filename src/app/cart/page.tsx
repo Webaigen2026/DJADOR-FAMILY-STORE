@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import CartItem from "../../components/cart/cart-item";
 import CartSummary from "../../components/cart/cart-summary";
 import EmptyCart from "../../components/cart/empty-cart";
+import { useCart } from "../../components/cart/cart-context";
 
 type CartProduct = {
   id: string;
@@ -21,6 +22,7 @@ type CartItemType = {
 };
 
 export default function CartPage() {
+  const { refreshCart } = useCart();
   const [items, setItems] = useState<CartItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,10 +64,12 @@ export default function CartPage() {
         item.id === itemId ? { ...item, quantity: nextQuantity } : item
       )
     );
+    void refreshCart();
   }
 
   function handleRemove(itemId: string) {
     setItems((prev) => prev.filter((item) => item.id !== itemId));
+    void refreshCart();
   }
 
   const totalItems = useMemo(

@@ -116,17 +116,23 @@ export default async function OrderDetailsPage({
   );
 
   const canCancel =
-    order.status === "PENDING" || order.status === "PAID";
+    order.status === "PENDING_PAYMENT" || order.status === "PAID";
 
   const canBuyAgain =
-    order.status === "FULFILLED" ||
+    order.status === "COMPLETED" ||
     order.status === "CANCELLED" ||
-    order.status === "FAILED";
+    order.status === "REFUNDED";
 
   const canTrack =
     Boolean(order.trackingNumber) &&
     (order.status === "PAID" ||
-      order.status === "FULFILLED");
+      order.status === "PROCESSING" ||
+      order.status === "PACKING" ||
+      order.status === "READY_TO_SHIP" ||
+      order.status === "SHIPPED" ||
+      order.status === "OUT_FOR_DELIVERY" ||
+      order.status === "DELIVERED" ||
+      order.status === "COMPLETED");
 
   return (
     <div className="space-y-4">
@@ -299,7 +305,7 @@ export default async function OrderDetailsPage({
             </div>
           </section>
 
-          {order.status === "FULFILLED" ? (
+          {order.status === "COMPLETED" ? (
             <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
               <div className="flex items-start gap-3">
                 <PackageCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />

@@ -30,6 +30,8 @@ import {
   X,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
+import { useCart } from "../cart/cart-context";
+import Image from "next/image";
 
 const categoryLinks = [
   { label: "Electronics", href: "/products?category=electronics" },
@@ -64,16 +66,19 @@ type LocationResult = {
 type IconComponent = ComponentType<{ className?: string }>;
 
 export default function Navbar({
-  cartCount = 0,
+  cartCount: cartCountProp = 0,
   notificationCount = 0,
   wishlistCount = 0,
 }: NavbarProps) {
   const { data: session } = useSession();
+  const { cartCount: liveCartCount } = useCart();
+  const cartCount = liveCartCount || cartCountProp;
 
   const [accountOpen, setAccountOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartBadgePopKey, setCartBadgePopKey] = useState(0);
 
   const [search, setSearch] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -88,6 +93,7 @@ export default function Navbar({
   const accountRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
+  const previousCartCountRef = useRef<number | null>(null);
 
   const displayName =
     session?.user?.name?.trim().split(/\s+/)[0] ||
@@ -116,6 +122,19 @@ export default function Navbar({
       setZipCode("");
     }
   }, []);
+
+  useEffect(() => {
+    if (previousCartCountRef.current === null) {
+      previousCartCountRef.current = cartCount;
+      return;
+    }
+
+    if (cartCount > previousCartCountRef.current) {
+      setCartBadgePopKey((current) => current + 1);
+    }
+
+    previousCartCountRef.current = cartCount;
+  }, [cartCount]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -359,12 +378,13 @@ export default function Navbar({
             aria-label="DJADOR Family Store home"
             className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
           >
-            <span className="block text-[24px] font-black leading-none tracking-[-0.05em] text-slate-950 sm:text-[27px]">
+            {/* <span className="block text-[24px] font-black leading-none tracking-[-0.05em] text-slate-950 sm:text-[27px]">
               DJADOR
             </span>
             <span className="mt-1 hidden text-[10px] font-bold uppercase tracking-[0.28em] text-slate-500 sm:block">
               Family Store
-            </span>
+            </span> */}
+            <Image src="/images/logo/DJADORWTOBG.png" alt="DJADOR" width={100} height={100} />
           </Link>
 
           <form
@@ -658,10 +678,39 @@ export default function Navbar({
             >
               <span className="relative">
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && <CountBadge count={cartCount} />}
+                {/* Animated/incremental badge when cartCount increases */}
+                {cartCount > 0 && (
+                  <span
+                    key={cartBadgePopKey}
+                    className="cart-increment-badge-anim absolute -right-2 -top-2 z-10"
+                  >
+                    <CountBadge count={cartCount} />
+                  </span>
+                )}
               </span>
               <span>Cart</span>
             </Link>
+            {/* Incremental animation style */}
+            <style jsx>{`
+              .cart-increment-badge-anim {
+                animation: cart-badge-pop 0.3s cubic-bezier(0.2, 0.65, 0.6, 1);
+              }
+              @keyframes cart-badge-pop {
+                0% {
+                  transform: scale(1.4);
+                  opacity: 0.4;
+                }
+                60% {
+                  transform: scale(1.1);
+                  opacity: 1;
+                }
+                100% {
+                  transform: scale(1);
+                  opacity: 1;
+                }
+              }
+            `}</style>
+       
           </nav>
 
           <div className="ml-auto flex items-center gap-1 lg:hidden">
@@ -686,7 +735,11 @@ export default function Navbar({
               className={iconActionClass}
             >
               <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && <CountBadge count={cartCount} />}
+              {cartCount > 0 && (
+                <span key={cartBadgePopKey} className="cart-increment-badge-anim">
+                  <CountBadge count={cartCount} />
+                </span>
+              )}
             </Link>
 
             <button
@@ -751,12 +804,13 @@ export default function Navbar({
             <div className="border-b border-slate-800 bg-slate-950 px-5 py-5 text-white">
               <div className="flex items-start justify-between gap-4">
                 <Link href="/" onClick={closeMobileMenu}>
-                  <p className="text-xl font-black tracking-[-0.04em]">
+                  {/* <p className="text-xl font-black tracking-[-0.04em]">
                     DJADOR
                   </p>
                   <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-300">
                     Family Store
-                  </p>
+                  </p> */}
+                  <Image src="/images/logo/DJADORWTOBG.png" alt="DJADOR" width={100} height={100} />
                 </Link>
 
                 <button

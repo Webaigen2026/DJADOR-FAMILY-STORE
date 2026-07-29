@@ -60,16 +60,34 @@ export async function POST(req: NextRequest) {
     }
 
     // STEP 5: Status mapping
-    let newPaymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED" = "PENDING";
-    let newOrderStatus: "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "FULFILLED" =
-      "PENDING";
+    let newPaymentStatus:
+      | "PENDING"
+      | "AUTHORIZED"
+      | "CAPTURED"
+      | "FAILED"
+      | "REFUNDED"
+      | "PARTIALLY_REFUNDED" = "PENDING";
+    let newOrderStatus:
+      | "PENDING_PAYMENT"
+      | "PAID"
+      | "PROCESSING"
+      | "PACKING"
+      | "READY_TO_SHIP"
+      | "SHIPPED"
+      | "OUT_FOR_DELIVERY"
+      | "DELIVERED"
+      | "COMPLETED"
+      | "CANCELLED"
+      | "RETURN_REQUESTED"
+      | "RETURNED"
+      | "REFUNDED" = "PENDING_PAYMENT";
 
     if (payment.status === "COMPLETED") {
-      newPaymentStatus = "PAID";
+      newPaymentStatus = "CAPTURED";
       newOrderStatus = "PAID";
     } else if (payment.status === "FAILED" || payment.status === "CANCELED") {
       newPaymentStatus = "FAILED";
-      newOrderStatus = "FAILED";
+      newOrderStatus = "CANCELLED";
     }
 
     // STEP 6: Update Payment

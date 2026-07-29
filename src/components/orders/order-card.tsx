@@ -26,14 +26,28 @@ function formatPrice(amount: number) {
 function getStatusStyles(status: string) {
   const normalizedStatus = status.toUpperCase();
 
-  if (normalizedStatus === "PAID" || normalizedStatus === "FULFILLED") {
+  if (
+    normalizedStatus === "PAID" ||
+    normalizedStatus === "CAPTURED" ||
+    normalizedStatus === "AUTHORIZED" ||
+    normalizedStatus === "COMPLETED" ||
+    normalizedStatus === "DELIVERED" ||
+    normalizedStatus === "FULFILLED"
+  ) {
     return {
       className: "bg-emerald-50 text-emerald-700",
       icon: CheckCircle2,
     };
   }
 
-  if (normalizedStatus === "FAILED" || normalizedStatus === "CANCELLED") {
+  if (
+    normalizedStatus === "FAILED" ||
+    normalizedStatus === "CANCELLED" ||
+    normalizedStatus === "REFUNDED" ||
+    normalizedStatus === "RETURNED" ||
+    normalizedStatus === "RETURN_REQUESTED" ||
+    normalizedStatus === "PARTIALLY_REFUNDED"
+  ) {
     return {
       className: "bg-red-50 text-red-700",
       icon: XCircle,

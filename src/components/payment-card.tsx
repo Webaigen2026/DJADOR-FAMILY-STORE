@@ -12,9 +12,11 @@ import {
   
   type PaymentStatus =
     | "PENDING"
-    | "PAID"
+    | "AUTHORIZED"
+    | "CAPTURED"
     | "FAILED"
-    | "REFUNDED";
+    | "REFUNDED"
+    | "PARTIALLY_REFUNDED";
   
   type Payment = {
     status: PaymentStatus;
@@ -47,7 +49,8 @@ import {
   
   function paymentInfo(status: PaymentStatus) {
     switch (status) {
-      case "PAID":
+      case "CAPTURED":
+      case "AUTHORIZED":
         return {
           title: "Payment Successful",
           description: "Your payment has been securely processed.",
@@ -58,6 +61,7 @@ import {
         };
   
       case "REFUNDED":
+      case "PARTIALLY_REFUNDED":
         return {
           title: "Payment Refunded",
           description: "A refund has been issued for this order.",

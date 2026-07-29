@@ -23,11 +23,19 @@ type Item = {
 type Props = {
   orderId: string;
   orderStatus:
-    | "PENDING"
+    | "PENDING_PAYMENT"
     | "PAID"
-    | "FAILED"
+    | "PROCESSING"
+    | "PACKING"
+    | "READY_TO_SHIP"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "COMPLETED"
     | "CANCELLED"
-    | "FULFILLED";
+    | "RETURN_REQUESTED"
+    | "RETURNED"
+    | "REFUNDED";
   items: Item[];
 };
 
@@ -185,7 +193,7 @@ export default function OrderItems({
                   View Product
                 </Link>
 
-                {orderStatus === "FULFILLED" && (
+                {orderStatus === "COMPLETED" && (
                   <>
                     <button
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
