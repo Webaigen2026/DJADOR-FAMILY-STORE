@@ -1,30 +1,30 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { prisma } from "../../../../../lib/prisma";
 
 async function saveUploadedImages(files: File[]) {
-  const uploadDir = path.join(process.cwd(), "public", "images", "products");
-  await mkdir(uploadDir, { recursive: true });
-
   const urls: string[] = [];
 
   for (const file of files) {
     if (!file || file.size === 0) continue;
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Same Blob upload path as POST /api/admin/upload (used by ProductForm).
+    const safeName = file.name
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.-]/g, "");
 
-    const safeName = file.name.replace(/\s+/g, "-");
-    const fileName = `${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2)}-${safeName}`;
+    const blob = await put(
+      `products/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}-${safeName}`,
+      file,
+      {
+        access: "public",
+      }
+    );
 
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    urls.push(`/images/products/${fileName}`);
+    urls.push(blob.url);
   }
 
   return urls;
