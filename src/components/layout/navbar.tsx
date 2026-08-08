@@ -367,16 +367,19 @@ export default function Navbar({
   }
 
   const iconActionClass =
-    "group relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-transparent text-slate-700 transition duration-200 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2";
+    "group relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-transparent text-slate-600 transition duration-200 hover:border-amber-200 hover:bg-amber-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2";
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-[0_1px_14px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_30px_-18px_rgba(15,23,42,0.25)] backdrop-blur-xl">
+        {/* Thin brand rule — the one accent stroke that carries the identity across every view */}
+        <div className="h-[3px] w-full bg-gradient-to-r from-slate-950 via-amber-500 to-slate-950" />
+
         <div className="mx-auto flex h-[76px] max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:gap-5 xl:px-8">
           <Link
             href="/"
             aria-label="DJADOR Family Store home"
-            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
           >
             {/* <span className="block text-[24px] font-black leading-none tracking-[-0.05em] text-slate-950 sm:text-[27px]">
               DJADOR
@@ -403,7 +406,7 @@ export default function Navbar({
               placeholder="Search products, brands and categories"
               autoComplete="off"
               aria-label="Search products"
-              className="h-[52px] w-full rounded-2xl border border-slate-200 bg-slate-50 pl-14 pr-14 text-[15px] text-slate-900 outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+              className="h-[52px] w-full rounded-full border border-slate-200 bg-slate-50 pl-14 pr-14 text-[15px] text-slate-900 outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-amber-500/10"
             />
 
             {search && (
@@ -431,21 +434,21 @@ export default function Navbar({
                 }}
                 aria-expanded={locationOpen}
                 aria-haspopup="menu"
-                className="flex h-12 items-center gap-2 rounded-xl px-3 text-left text-slate-700 transition duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                className="flex h-12 items-center gap-2 rounded-xl px-3 text-left text-slate-700 transition duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
-                <MapPin className="h-5 w-5 shrink-0" />
+                <MapPin className="h-5 w-5 shrink-0 text-slate-400 transition group-hover:text-amber-600" />
 
                 <span className="min-w-0">
-                  <span className="block text-[11px] font-medium leading-none text-slate-500">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide leading-none text-slate-400">
                     Deliver to
                   </span>
-                  <span className="mt-1 block max-w-[130px] truncate text-sm font-extrabold leading-none">
+                  <span className="mt-1.5 block max-w-[130px] truncate text-sm font-extrabold leading-none text-slate-950">
                     {deliveryLabel}
                   </span>
                 </span>
 
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
                     locationOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -456,9 +459,9 @@ export default function Navbar({
                   role="menu"
                   className="absolute left-0 top-full z-50 w-80 pt-3"
                 >
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-xl bg-slate-100 p-2.5 text-slate-800">
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_28px_64px_-12px_rgba(15,23,42,0.25)]">
+                    <div className="flex items-start gap-3 p-5">
+                      <div className="rounded-xl bg-amber-50 p-2.5 text-amber-700">
                         <MapPin className="h-5 w-5" />
                       </div>
 
@@ -472,30 +475,34 @@ export default function Navbar({
                       </div>
                     </div>
 
-                    {deliveryLabel !== DEFAULT_DELIVERY_LABEL && (
-                      <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                          Currently selected
-                        </p>
-                        <p className="mt-1 truncate text-sm font-extrabold text-emerald-950">
-                          {deliveryLabel}
-                        </p>
-                      </div>
-                    )}
+                    <div className="px-5 pb-5">
+                      {deliveryLabel !== DEFAULT_DELIVERY_LABEL && (
+                        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                            Currently selected
+                          </p>
+                          <p className="mt-1 truncate text-sm font-extrabold text-emerald-950">
+                            {deliveryLabel}
+                          </p>
+                        </div>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={openLocationModal}
-                      className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
-                    >
-                      {deliveryLabel === DEFAULT_DELIVERY_LABEL
-                        ? "Choose delivery location"
-                        : "Update delivery location"}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={openLocationModal}
+                        className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                      >
+                        {deliveryLabel === DEFAULT_DELIVERY_LABEL
+                          ? "Choose delivery location"
+                          : "Update delivery location"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
+
+            <div className="mx-1 h-8 w-px bg-slate-200" aria-hidden="true" />
 
             <div ref={accountRef} className="relative">
               <button
@@ -506,21 +513,23 @@ export default function Navbar({
                 }}
                 aria-expanded={accountOpen}
                 aria-haspopup="menu"
-                className="flex h-12 items-center gap-2 rounded-xl px-3 text-left text-slate-700 transition duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                className="flex h-12 items-center gap-2.5 rounded-xl px-3 text-left text-slate-700 transition duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
-                <User className="h-5 w-5 shrink-0" />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition group-hover:bg-amber-50">
+                  <User className="h-4 w-4" />
+                </span>
 
                 <span className="min-w-0">
-                  <span className="block text-[11px] font-medium leading-none text-slate-500">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide leading-none text-slate-400">
                     {session?.user ? "Hello" : "Welcome"}
                   </span>
-                  <span className="mt-1 block max-w-[115px] truncate text-sm font-extrabold leading-none">
+                  <span className="mt-1.5 block max-w-[115px] truncate text-sm font-extrabold leading-none text-slate-950">
                     {displayName}
                   </span>
                 </span>
 
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
                     accountOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -531,8 +540,8 @@ export default function Navbar({
                   role="menu"
                   className="absolute right-0 top-full z-50 w-[340px] pt-3"
                 >
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-                    <div className="border-b border-slate-100 bg-slate-50/80 p-5">
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_28px_64px_-12px_rgba(15,23,42,0.25)]">
+                    <div className="border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white p-5">
                       {session?.user ? (
                         <>
                           <p className="truncate text-base font-black text-slate-950">
@@ -556,7 +565,7 @@ export default function Navbar({
                             <Link
                               href="/login"
                               onClick={closeDesktopMenus}
-                              className="rounded-xl bg-slate-950 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-slate-800"
+                              className="rounded-xl bg-slate-950 px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition hover:bg-slate-800"
                             >
                               Sign in
                             </Link>
@@ -564,7 +573,7 @@ export default function Navbar({
                             <Link
                               href="/register"
                               onClick={closeDesktopMenus}
-                              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-900 transition hover:bg-slate-50"
+                              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
                             >
                               Register
                             </Link>
@@ -608,7 +617,7 @@ export default function Navbar({
                         onClick={openLocationModal}
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
                       >
-                        <MapPin className="h-[18px] w-[18px]" />
+                        <MapPin className="h-[18px] w-[18px] text-slate-400" />
                         <span className="flex-1">Saved addresses</span>
                       </button>
 
@@ -674,7 +683,7 @@ export default function Navbar({
               aria-label={`Cart${
                 cartCount ? `, ${cartCount} items` : ""
               }`}
-              className="relative ml-1 flex h-12 items-center gap-2 rounded-xl px-3 text-sm font-extrabold text-slate-800 transition duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+              className="relative ml-2 flex h-12 items-center gap-2.5 rounded-full border border-slate-200 bg-slate-950 px-5 text-sm font-extrabold text-white shadow-sm transition duration-200 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             >
               <span className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -769,7 +778,7 @@ export default function Navbar({
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search products, brands and categories"
               aria-label="Search products"
-              className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-11 text-sm outline-none transition focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+              className="h-11 w-full rounded-full border border-slate-200 bg-slate-50 pl-12 pr-11 text-sm outline-none transition focus:border-slate-950 focus:bg-white focus:ring-4 focus:ring-amber-500/10"
             />
 
             {search && (
@@ -792,7 +801,7 @@ export default function Navbar({
             type="button"
             aria-label="Close navigation menu"
             onClick={closeMobileMenu}
-            className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
           />
 
           <aside
@@ -823,7 +832,7 @@ export default function Navbar({
                 </button>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/10 p-4">
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.07] p-4">
                 <p className="text-xs text-slate-300">
                   {session?.user ? "Signed in as" : "Welcome to DJADOR"}
                 </p>
@@ -833,6 +842,8 @@ export default function Navbar({
                     "Sign in to access your account"}
                 </p>
               </div>
+
+              <div className="mt-4 h-px w-full bg-gradient-to-r from-amber-400/70 via-amber-400/20 to-transparent" />
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-5">
@@ -909,7 +920,7 @@ export default function Navbar({
                     key={category.label}
                     href={category.href}
                     onClick={closeMobileMenu}
-                    className="rounded-xl border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950"
+                    className="rounded-xl border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-slate-950"
                   >
                     {category.label}
                   </Link>
@@ -938,7 +949,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: "https://www.djadorfamilystore.com/login" })}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out
@@ -948,7 +959,7 @@ export default function Navbar({
                   <Link
                     href="/login"
                     onClick={closeMobileMenu}
-                    className="rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
+                    className="rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white shadow-sm transition hover:bg-slate-800"
                   >
                     Sign in
                   </Link>
@@ -956,7 +967,7 @@ export default function Navbar({
                   <Link
                     href="/register"
                     onClick={closeMobileMenu}
-                    className="rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-slate-50"
+                    className="rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-bold text-slate-950 transition hover:border-slate-400 hover:bg-slate-50"
                   >
                     Register
                   </Link>
@@ -968,7 +979,7 @@ export default function Navbar({
       )}
 
       {locationModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex justify-end bg-slate-950/50 backdrop-blur-[2px]">
+        <div className="fixed inset-0 z-[9999] flex justify-end bg-slate-950/55 backdrop-blur-[2px]">
           <button
             type="button"
             aria-label="Close delivery location panel"
@@ -984,7 +995,7 @@ export default function Navbar({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">
                   Delivery preferences
                 </p>
 
@@ -1036,15 +1047,16 @@ export default function Navbar({
                   }}
                   placeholder="Enter ZIP code"
                   maxLength={10}
-                  className="h-14 w-full rounded-2xl border border-slate-300 pl-12 pr-4 text-base text-slate-950 outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-950/5"
+                  className="h-14 w-full rounded-2xl border border-slate-300 pl-12 pr-4 text-base text-slate-950 outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-amber-500/10"
                 />
               </div>
 
               {locationError && (
                 <p
                   role="alert"
-                  className="mt-3 text-sm font-medium text-rose-600"
+                  className="mt-3 flex items-start gap-2 text-sm font-medium text-rose-600"
                 >
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   {locationError}
                 </p>
               )}
@@ -1052,7 +1064,7 @@ export default function Navbar({
               <button
                 type="submit"
                 disabled={locationLoading}
-                className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-4 w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {locationLoading
                   ? "Finding your location..."
@@ -1076,7 +1088,7 @@ export default function Navbar({
             >
               <LocateFixed
                 className={`h-5 w-5 ${
-                  locationLoading ? "animate-pulse" : ""
+                  locationLoading ? "animate-pulse text-amber-600" : ""
                 }`}
               />
               {locationLoading
@@ -1126,7 +1138,7 @@ export default function Navbar({
                   <button
                     type="button"
                     onClick={confirmResolvedLocation}
-                    className="mt-4 w-full rounded-xl bg-emerald-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800"
+                    className="mt-4 w-full rounded-xl bg-emerald-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800"
                   >
                     Deliver to this location
                   </button>
@@ -1211,7 +1223,7 @@ function AccountLink({
       onClick={onClick}
       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
     >
-      <Icon className="h-[18px] w-[18px]" />
+      <Icon className="h-[18px] w-[18px] text-slate-400" />
       <span className="flex-1">{label}</span>
 
       {badge > 0 && (
