@@ -9,12 +9,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+
 import { useSession } from "next-auth/react";
 
 type CartContextValue = {
   cartCount: number;
   isLoading: boolean;
   refreshCart: () => Promise<void>;
+  clearCartCount: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -26,12 +28,18 @@ function getTotalQuantity(
 
   return items.reduce((sum, item) => {
     const quantity = Number(item.quantity);
+
     return sum + (Number.isFinite(quantity) ? quantity : 0);
   }, 0);
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const { status } = useSession();
+
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -60,15 +68,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       const items =
-        data.items || data.cart?.items || data.cartItems || [];
+        data.items ||
+        data.cart?.items ||
+        data.cartItems ||
+        [];
 
       setCartCount(getTotalQuantity(items));
     } catch (error) {
-      console.error("Failed to refresh cart count:", error);
+      console.error(
+        "Failed to refresh cart count:",
+        error
+      );
     } finally {
       setIsLoading(false);
     }
   }, [status]);
+
+  const clearCartCount = useCallback(() => {
+    setCartCount(0);
+  }, []);
 
   useEffect(() => {
     if (status === "loading") {
@@ -83,12 +101,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cartCount,
       isLoading,
       refreshCart,
+      clearCartCount,
     }),
-    [cartCount, isLoading, refreshCart]
+    [
+      cartCount,
+      isLoading,
+      refreshCart,
+      clearCartCount,
+    ]
   );
 
   return (
-    <CartContext.Provider value={value}>{children}</CartContext.Provider>
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
   );
 }
 
@@ -96,7 +122,9 @@ export function useCart() {
   const context = useContext(CartContext);
 
   if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
+    throw new Error(
+      "useCart must be used within a CartProvider"
+    );
   }
 
   return context;

@@ -1,6 +1,11 @@
 import Link from "next/link";
+
 import { prisma } from "../../../lib/prisma";
+
 import { revalidatePath } from "next/cache";
+
+import { auth } from "../../../auth";
+
 import ProductSearchFilter from "../../../components/admin/product-search-filter";
 
 function formatMoney(amount: number) {
@@ -12,6 +17,12 @@ function formatMoney(amount: number) {
 
 async function deactivateProduct(formData: FormData) {
   "use server";
+
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
 
   const id = String(formData.get("id"));
 
@@ -27,6 +38,12 @@ async function deactivateProduct(formData: FormData) {
 async function activateProduct(formData: FormData) {
   "use server";
 
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
   const id = String(formData.get("id"));
 
   await prisma.product.update({
@@ -40,6 +57,12 @@ async function activateProduct(formData: FormData) {
 
 async function deleteProduct(formData: FormData) {
   "use server";
+
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
 
   const id = String(formData.get("id"));
 
@@ -64,33 +87,61 @@ export default async function AdminProductsPage({
         search
           ? {
               OR: [
-                { name: { contains: search, mode: "insensitive" } },
-                { category: { contains: search, mode: "insensitive" } },
-                { brand: { contains: search, mode: "insensitive" } },
+                {
+                  name: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  category: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  brand: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
+                },
               ],
             }
           : {},
+
         status === "active"
           ? { isActive: true }
           : status === "inactive"
-          ? { isActive: false }
-          : status === "out-of-stock"
-          ? { stock: 0 }
-          : {},
+            ? { isActive: false }
+            : status === "out-of-stock"
+              ? { stock: 0 }
+              : {},
       ],
     },
+
     include: {
       images: true,
     },
+
     orderBy: {
       createdAt: "desc",
     },
   });
 
   const totalProducts = products.length;
-  const activeProducts = products.filter((p) => p.isActive).length;
-  const inactiveProducts = products.filter((p) => !p.isActive).length;
-  const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
+
+  const activeProducts = products.filter(
+    (p) => p.isActive
+  ).length;
+
+  const inactiveProducts = products.filter(
+    (p) => !p.isActive
+  ).length;
+
+  const totalStock = products.reduce(
+    (sum, p) => sum + p.stock,
+    0
+  );
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 px-6 py-10">
@@ -100,11 +151,14 @@ export default async function AdminProductsPage({
             <p className="text-sm font-semibold text-green-600">
               Admin Dashboard / Products
             </p>
+
             <h1 className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
               Product Management
             </h1>
+
             <p className="mt-2 text-slate-600">
-              Manage inventory, pricing, visibility, and product lifecycle from one place.
+              Manage inventory, pricing, visibility, and
+              product lifecycle from one place.
             </p>
           </div>
 
@@ -118,23 +172,43 @@ export default async function AdminProductsPage({
 
         <div className="mb-8 grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Total Products</p>
-            <h2 className="mt-2 text-3xl font-bold text-slate-950">{totalProducts}</h2>
+            <p className="text-sm font-semibold text-slate-500">
+              Total Products
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-slate-950">
+              {totalProducts}
+            </h2>
           </div>
 
           <div className="rounded-2xl border border-green-100 bg-green-50 p-5 shadow-sm">
-            <p className="text-sm font-semibold text-green-700">Active Products</p>
-            <h2 className="mt-2 text-3xl font-bold text-green-700">{activeProducts}</h2>
+            <p className="text-sm font-semibold text-green-700">
+              Active Products
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-green-700">
+              {activeProducts}
+            </h2>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Inactive Products</p>
-            <h2 className="mt-2 text-3xl font-bold text-slate-950">{inactiveProducts}</h2>
+            <p className="text-sm font-semibold text-slate-500">
+              Inactive Products
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-slate-950">
+              {inactiveProducts}
+            </h2>
           </div>
 
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
-            <p className="text-sm font-semibold text-blue-700">Inventory Units</p>
-            <h2 className="mt-2 text-3xl font-bold text-blue-700">{totalStock}</h2>
+            <p className="text-sm font-semibold text-blue-700">
+              Inventory Units
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-blue-700">
+              {totalStock}
+            </h2>
           </div>
         </div>
 
@@ -143,9 +217,13 @@ export default async function AdminProductsPage({
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-100">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
             <div>
-              <h2 className="text-xl font-bold text-slate-950">All Products</h2>
+              <h2 className="text-xl font-bold text-slate-950">
+                All Products
+              </h2>
+
               <p className="mt-1 text-sm text-slate-500">
-                Track inventory, pricing, and product visibility across your storefront.
+                Track inventory, pricing, and product visibility
+                across your storefront.
               </p>
             </div>
           </div>
@@ -159,13 +237,18 @@ export default async function AdminProductsPage({
                 <th className="px-6 py-4">Price</th>
                 <th className="px-6 py-4">Stock</th>
                 <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
+                <th className="px-6 py-4 text-right">
+                  Action
+                </th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100">
               {products.map((product) => (
-                <tr key={product.id} className="transition hover:bg-slate-50">
+                <tr
+                  key={product.id}
+                  className="transition hover:bg-slate-50"
+                >
                   <td className="px-6 py-5">
                     {product.imageUrl ? (
                       <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
@@ -184,8 +267,14 @@ export default async function AdminProductsPage({
 
                   <td className="px-6 py-5">
                     <div>
-                      <p className="font-bold text-slate-950">{product.name}</p>
-                      <p className="mt-1 text-xs text-slate-400">{product.slug}</p>
+                      <p className="font-bold text-slate-950">
+                        {product.name}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        {product.slug}
+                      </p>
+
                       <p className="mt-1 text-xs font-medium text-blue-600">
                         {product.images.length} Images
                       </p>
@@ -197,13 +286,15 @@ export default async function AdminProductsPage({
                   </td>
 
                   <td className="px-6 py-5 font-bold text-slate-950">
-  {formatMoney(product.price)}
-</td>
+                    {formatMoney(product.price)}
+                  </td>
 
                   <td className="px-6 py-5">
                     <span
                       className={`font-semibold ${
-                        product.stock > 0 ? "text-slate-800" : "text-red-600"
+                        product.stock > 0
+                          ? "text-slate-800"
+                          : "text-red-600"
                       }`}
                     >
                       {product.stock}
@@ -240,14 +331,24 @@ export default async function AdminProductsPage({
 
                       {product.isActive ? (
                         <form action={deactivateProduct}>
-                          <input type="hidden" name="id" value={product.id} />
+                          <input
+                            type="hidden"
+                            name="id"
+                            value={product.id}
+                          />
+
                           <button className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">
                             Deactivate
                           </button>
                         </form>
                       ) : (
                         <form action={activateProduct}>
-                          <input type="hidden" name="id" value={product.id} />
+                          <input
+                            type="hidden"
+                            name="id"
+                            value={product.id}
+                          />
+
                           <button className="rounded-lg border border-green-200 px-3 py-2 text-xs font-bold text-green-600 hover:bg-green-50">
                             Activate
                           </button>
@@ -255,7 +356,12 @@ export default async function AdminProductsPage({
                       )}
 
                       <form action={deleteProduct}>
-                        <input type="hidden" name="id" value={product.id} />
+                        <input
+                          type="hidden"
+                          name="id"
+                          value={product.id}
+                        />
+
                         <button className="rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">
                           Delete
                         </button>
@@ -267,10 +373,14 @@ export default async function AdminProductsPage({
 
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-16 text-center"
+                  >
                     <p className="text-lg font-bold text-slate-900">
                       No products found
                     </p>
+
                     <p className="mt-2 text-slate-500">
                       Try changing your search or filter.
                     </p>

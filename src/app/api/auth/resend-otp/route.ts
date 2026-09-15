@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "../../../../lib/prisma";
+import { sendVerificationOtpEmail } from "../../../../lib/email";
 
 const resendOtpSchema = z.object({
   email: z.string().email(),
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email } = parsed.data;
+    const email = parsed.data.email.toLowerCase();
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -55,16 +56,17 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(`Resent OTP for ${email}: ${otp}`);
+    await sendVerificationOtpEmail(email, otp);
 
     return NextResponse.json({
       success: true,
-      message: "OTP resent successfully.",
+      message: "Verification code resent successfully.",
     });
   } catch (error) {
     console.error("Resend OTP error:", error);
+
     return NextResponse.json(
-      { success: false, error: "Failed to resend OTP." },
+      { success: false, error: "Failed to resend verification code." },
       { status: 500 }
     );
   }

@@ -1,21 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "../../../lib/prisma";
+import { auth } from "../../../auth";
 
 export async function POST(request: NextRequest) {
   try {
+    // Get the authenticated user from the server-side session
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You must be logged in to submit a review.",
+        },
+        { status: 401 }
+      );
+    }
+
+    // Never trust userId sent by the browser
+    const userId = session.user.id;
+
     const body = await request.json();
 
-    const userId = String(body.userId || "").trim();
     const productId = String(body.productId || "").trim();
     const title = String(body.title || "").trim();
     const comment = String(body.comment || "").trim();
     const rating = Number(body.rating);
 
-    if (!userId || !productId || !comment) {
+    if (!productId || !comment) {
       return NextResponse.json(
         {
           success: false,
-          error: "User, product, and review comment are required.",
+          error: "Product and review comment are required.",
         },
         { status: 400 }
       );
@@ -31,6 +48,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Make sure the product actually exists
+    const product = await prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!product) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Product not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // One review per user per product
     const existingReview = await prisma.review.findUnique({
       where: {
         userId_productId: {
@@ -50,6 +88,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine whether this user actually purchased the product
     const purchasedItem = await prisma.orderItem.findFirst({
       where: {
         productId,

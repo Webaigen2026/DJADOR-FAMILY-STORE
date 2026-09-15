@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   CreditCard,
+  Loader2,
   LockKeyhole,
   Mail,
   MapPin,
@@ -15,6 +16,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "../cart/cart-context";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -57,8 +60,12 @@ const checkoutSteps = [
 ];
 
 export default function CheckoutForm() {
-  const [currentStep, setCurrentStep] =
-    useState<Step>(1);
+  const router = useRouter();
+  const { clearCartCount } = useCart();
+
+  const [currentStep, setCurrentStep] = useState<Step>(1);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   const [contact, setContact] = useState({
     firstName: "",
@@ -86,37 +93,27 @@ export default function CheckoutForm() {
     const errors: ContactErrors = {};
 
     if (!contact.firstName.trim()) {
-      errors.firstName =
-        "First name is required.";
+      errors.firstName = "First name is required.";
     }
 
     if (!contact.lastName.trim()) {
-      errors.lastName =
-        "Last name is required.";
+      errors.lastName = "Last name is required.";
     }
 
     if (!contact.email.trim()) {
-      errors.email =
-        "Email address is required.";
+      errors.email = "Email address is required.";
     } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        contact.email.trim(),
-      )
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email.trim())
     ) {
-      errors.email =
-        "Enter a valid email address.";
+      errors.email = "Enter a valid email address.";
     }
 
     if (!contact.phone.trim()) {
-      errors.phone =
-        "Phone number is required.";
+      errors.phone = "Phone number is required.";
     } else if (
-      !/^[0-9+\-().\s]{7,20}$/.test(
-        contact.phone.trim(),
-      )
+      !/^[0-9+\-().\s]{7,20}$/.test(contact.phone.trim())
     ) {
-      errors.phone =
-        "Enter a valid phone number.";
+      errors.phone = "Enter a valid phone number.";
     }
 
     setContactErrors(errors);
@@ -128,8 +125,7 @@ export default function CheckoutForm() {
     const errors: AddressErrors = {};
 
     if (!address.street.trim()) {
-      errors.street =
-        "Street address is required.";
+      errors.street = "Street address is required.";
     }
 
     if (!address.city.trim()) {
@@ -141,20 +137,15 @@ export default function CheckoutForm() {
     }
 
     if (!address.zip.trim()) {
-      errors.zip =
-        "ZIP code is required.";
+      errors.zip = "ZIP code is required.";
     } else if (
-      !/^[A-Za-z0-9 -]{3,10}$/.test(
-        address.zip.trim(),
-      )
+      !/^[A-Za-z0-9 -]{3,10}$/.test(address.zip.trim())
     ) {
-      errors.zip =
-        "Enter a valid ZIP code.";
+      errors.zip = "Enter a valid ZIP code.";
     }
 
     if (!address.country.trim()) {
-      errors.country =
-        "Country is required.";
+      errors.country = "Country is required.";
     }
 
     setAddressErrors(errors);
@@ -179,22 +170,21 @@ export default function CheckoutForm() {
   }
 
   function continueToReview() {
-    const contactIsValid =
-      validateContact();
+    const contactIsValid = validateContact();
 
     if (!contactIsValid) {
       setCurrentStep(1);
       return;
     }
 
-    const addressIsValid =
-      validateAddress();
+    const addressIsValid = validateAddress();
 
     if (!addressIsValid) {
       setCurrentStep(2);
       return;
     }
 
+    setOrderError("");
     setCurrentStep(4);
   }
 
@@ -232,6 +222,89 @@ export default function CheckoutForm() {
     continueToReview();
   }
 
+  async function handlePlaceOrder() {
+    if (submittingOrder) {
+      return;
+    }
+
+    const contactIsValid = validateContact();
+
+    if (!contactIsValid) {
+      setCurrentStep(1);
+      return;
+    }
+
+    const addressIsValid = validateAddress();
+
+    if (!addressIsValid) {
+      setCurrentStep(2);
+      return;
+    }
+
+    try {
+      setSubmittingOrder(true);
+      setOrderError("");
+
+      const shippingName =
+        `${contact.firstName.trim()} ${contact.lastName.trim()}`.trim();
+
+      const shippingAddress = [
+        address.street.trim(),
+        address.apartment.trim(),
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          shippingName,
+          shippingPhone: contact.phone.trim(),
+          shippingAddress,
+          shippingCity: address.city.trim(),
+          shippingState: address.state.trim(),
+          shippingZip: address.zip.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setOrderError(
+          data.error ||
+            "Unable to place your order. Please try again."
+        );
+        return;
+      }
+
+      const orderId = data.order?.id;
+
+if (!orderId) {
+  setOrderError(
+    "Your order was created, but the order number was not returned."
+  );
+
+  return;
+}
+
+clearCartCount();
+
+router.push(`/account/orders/${orderId}`);
+router.refresh();
+    } catch (error) {
+      console.error("PLACE_ORDER_ERROR", error);
+
+      setOrderError(
+        "Something went wrong while placing your order. Please try again."
+      );
+    } finally {
+      setSubmittingOrder(false);
+    }
+  }
+
   const baseInputClass =
     "h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-4";
 
@@ -242,10 +315,10 @@ export default function CheckoutForm() {
     `${baseInputClass} border-red-400 focus:border-red-600 focus:ring-red-100`;
 
   const primaryButtonClass =
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-950/15";
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-950/15 disabled:cursor-not-allowed disabled:opacity-60";
 
   const secondaryButtonClass =
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200";
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60";
 
   const contactCompleted =
     Boolean(contact.firstName.trim()) &&
@@ -262,8 +335,7 @@ export default function CheckoutForm() {
     Boolean(address.country.trim()) &&
     currentStep > 2;
 
-  const paymentCompleted =
-    currentStep > 3;
+  const paymentCompleted = currentStep > 3;
 
   return (
     <div className="space-y-5">
@@ -281,10 +353,7 @@ export default function CheckoutForm() {
           </div>
 
           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
-            {Math.round(
-              (currentStep / 4) * 100,
-            )}
-            %
+            {Math.round((currentStep / 4) * 100)}%
           </span>
         </div>
 
@@ -306,60 +375,52 @@ export default function CheckoutForm() {
           />
 
           <div className="relative grid grid-cols-4 gap-2">
-            {checkoutSteps.map(
-              (checkoutStep) => {
-                const Icon =
-                  checkoutStep.icon;
+            {checkoutSteps.map((checkoutStep) => {
+              const Icon = checkoutStep.icon;
 
-                const isActive =
-                  checkoutStep.number ===
-                  currentStep;
+              const isActive =
+                checkoutStep.number === currentStep;
 
-                const isCompleted =
-                  checkoutStep.number <
-                  currentStep;
+              const isCompleted =
+                checkoutStep.number < currentStep;
 
-                return (
-                  <button
-                    key={checkoutStep.number}
-                    type="button"
-                    onClick={() =>
-                      openStep(
-                        checkoutStep.number,
-                      )
-                    }
-                    className="flex flex-col items-center gap-2 text-center"
+              return (
+                <button
+                  key={checkoutStep.number}
+                  type="button"
+                  onClick={() =>
+                    openStep(checkoutStep.number)
+                  }
+                  className="flex flex-col items-center gap-2 text-center"
+                >
+                  <span
+                    className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 transition ${
+                      isCompleted
+                        ? "border-slate-950 bg-slate-950 text-white"
+                        : isActive
+                          ? "border-slate-950 bg-white text-slate-950 shadow-sm"
+                          : "border-slate-200 bg-white text-slate-400"
+                    }`}
                   >
-                    <span
-                      className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 transition ${
-                        isCompleted
-                          ? "border-slate-950 bg-slate-950 text-white"
-                          : isActive
-                            ? "border-slate-950 bg-white text-slate-950 shadow-sm"
-                            : "border-slate-200 bg-white text-slate-400"
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Icon className="h-4 w-4" />
-                      )}
-                    </span>
+                    {isCompleted ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Icon className="h-4 w-4" />
+                    )}
+                  </span>
 
-                    <span
-                      className={`text-xs font-bold ${
-                        isActive ||
-                        isCompleted
-                          ? "text-slate-950"
-                          : "text-slate-400"
-                      }`}
-                    >
-                      {checkoutStep.label}
-                    </span>
-                  </button>
-                );
-              },
-            )}
+                  <span
+                    className={`text-xs font-bold ${
+                      isActive || isCompleted
+                        ? "text-slate-950"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {checkoutStep.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -374,9 +435,7 @@ export default function CheckoutForm() {
       >
         <button
           type="button"
-          onClick={() =>
-            setCurrentStep(1)
-          }
+          onClick={() => setCurrentStep(1)}
           className="flex w-full items-start justify-between gap-5 px-5 py-5 text-left sm:px-6"
         >
           <div className="flex min-w-0 gap-4">
@@ -405,12 +464,10 @@ export default function CheckoutForm() {
                 Contact information
               </h2>
 
-              {currentStep !== 1 &&
-              contact.email ? (
+              {currentStep !== 1 && contact.email ? (
                 <div className="mt-3 space-y-1 text-sm text-slate-600">
                   <p className="font-semibold text-slate-900">
-                    {contact.firstName}{" "}
-                    {contact.lastName}
+                    {contact.firstName} {contact.lastName}
                   </p>
 
                   <p className="flex items-center gap-2">
@@ -427,8 +484,8 @@ export default function CheckoutForm() {
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-slate-500">
-                  Enter your contact details for
-                  receipts and order updates.
+                  Enter your contact details for receipts
+                  and order updates.
                 </p>
               )}
             </div>
@@ -463,16 +520,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setContact((previous) => ({
                       ...previous,
-                      firstName:
-                        event.target.value,
+                      firstName: event.target.value,
                     }));
 
-                    setContactErrors(
-                      (previous) => ({
-                        ...previous,
-                        firstName: undefined,
-                      }),
-                    );
+                    setContactErrors((previous) => ({
+                      ...previous,
+                      firstName: undefined,
+                    }));
                   }}
                   className={
                     contactErrors.firstName
@@ -483,9 +537,7 @@ export default function CheckoutForm() {
 
                 {contactErrors.firstName ? (
                   <p className="mt-1.5 text-xs font-semibold text-red-600">
-                    {
-                      contactErrors.firstName
-                    }
+                    {contactErrors.firstName}
                   </p>
                 ) : null}
               </div>
@@ -507,16 +559,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setContact((previous) => ({
                       ...previous,
-                      lastName:
-                        event.target.value,
+                      lastName: event.target.value,
                     }));
 
-                    setContactErrors(
-                      (previous) => ({
-                        ...previous,
-                        lastName: undefined,
-                      }),
-                    );
+                    setContactErrors((previous) => ({
+                      ...previous,
+                      lastName: undefined,
+                    }));
                   }}
                   className={
                     contactErrors.lastName
@@ -527,9 +576,7 @@ export default function CheckoutForm() {
 
                 {contactErrors.lastName ? (
                   <p className="mt-1.5 text-xs font-semibold text-red-600">
-                    {
-                      contactErrors.lastName
-                    }
+                    {contactErrors.lastName}
                   </p>
                 ) : null}
               </div>
@@ -551,16 +598,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setContact((previous) => ({
                       ...previous,
-                      email:
-                        event.target.value,
+                      email: event.target.value,
                     }));
 
-                    setContactErrors(
-                      (previous) => ({
-                        ...previous,
-                        email: undefined,
-                      }),
-                    );
+                    setContactErrors((previous) => ({
+                      ...previous,
+                      email: undefined,
+                    }));
                   }}
                   className={
                     contactErrors.email
@@ -575,8 +619,8 @@ export default function CheckoutForm() {
                   </p>
                 ) : (
                   <p className="mt-1.5 text-xs text-slate-500">
-                    Your receipt and order updates
-                    will be sent here.
+                    Your receipt and order updates will be
+                    sent here.
                   </p>
                 )}
               </div>
@@ -598,16 +642,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setContact((previous) => ({
                       ...previous,
-                      phone:
-                        event.target.value,
+                      phone: event.target.value,
                     }));
 
-                    setContactErrors(
-                      (previous) => ({
-                        ...previous,
-                        phone: undefined,
-                      }),
-                    );
+                    setContactErrors((previous) => ({
+                      ...previous,
+                      phone: undefined,
+                    }));
                   }}
                   className={
                     contactErrors.phone
@@ -627,9 +668,7 @@ export default function CheckoutForm() {
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={
-                  continueToAddress
-                }
+                onClick={continueToAddress}
                 className={`${primaryButtonClass} w-full sm:w-auto`}
               >
                 Save and continue
@@ -679,8 +718,7 @@ export default function CheckoutForm() {
                 Shipping address
               </h2>
 
-              {currentStep !== 2 &&
-              address.street ? (
+              {currentStep !== 2 && address.street ? (
                 <div className="mt-3 text-sm leading-6 text-slate-600">
                   <p className="font-semibold text-slate-900">
                     {address.street}
@@ -690,8 +728,7 @@ export default function CheckoutForm() {
                   </p>
 
                   <p>
-                    {address.city},{" "}
-                    {address.state}{" "}
+                    {address.city}, {address.state}{" "}
                     {address.zip}
                   </p>
 
@@ -699,8 +736,8 @@ export default function CheckoutForm() {
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-slate-500">
-                  Enter the address where your
-                  order should be delivered.
+                  Enter the address where your order
+                  should be delivered.
                 </p>
               )}
             </div>
@@ -735,16 +772,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setAddress((previous) => ({
                       ...previous,
-                      street:
-                        event.target.value,
+                      street: event.target.value,
                     }));
 
-                    setAddressErrors(
-                      (previous) => ({
-                        ...previous,
-                        street: undefined,
-                      }),
-                    );
+                    setAddressErrors((previous) => ({
+                      ...previous,
+                      street: undefined,
+                    }));
                   }}
                   className={
                     addressErrors.street
@@ -778,14 +812,10 @@ export default function CheckoutForm() {
                   placeholder="Apartment 4B"
                   value={address.apartment}
                   onChange={(event) =>
-                    setAddress(
-                      (previous) => ({
-                        ...previous,
-                        apartment:
-                          event.target
-                            .value,
-                      }),
-                    )
+                    setAddress((previous) => ({
+                      ...previous,
+                      apartment: event.target.value,
+                    }))
                   }
                   className={inputClass}
                 />
@@ -808,16 +838,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setAddress((previous) => ({
                       ...previous,
-                      city:
-                        event.target.value,
+                      city: event.target.value,
                     }));
 
-                    setAddressErrors(
-                      (previous) => ({
-                        ...previous,
-                        city: undefined,
-                      }),
-                    );
+                    setAddressErrors((previous) => ({
+                      ...previous,
+                      city: undefined,
+                    }));
                   }}
                   className={
                     addressErrors.city
@@ -850,16 +877,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setAddress((previous) => ({
                       ...previous,
-                      state:
-                        event.target.value,
+                      state: event.target.value,
                     }));
 
-                    setAddressErrors(
-                      (previous) => ({
-                        ...previous,
-                        state: undefined,
-                      }),
-                    );
+                    setAddressErrors((previous) => ({
+                      ...previous,
+                      state: undefined,
+                    }));
                   }}
                   className={
                     addressErrors.state
@@ -892,16 +916,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setAddress((previous) => ({
                       ...previous,
-                      zip:
-                        event.target.value,
+                      zip: event.target.value,
                     }));
 
-                    setAddressErrors(
-                      (previous) => ({
-                        ...previous,
-                        zip: undefined,
-                      }),
-                    );
+                    setAddressErrors((previous) => ({
+                      ...previous,
+                      zip: undefined,
+                    }));
                   }}
                   className={
                     addressErrors.zip
@@ -934,16 +955,13 @@ export default function CheckoutForm() {
                   onChange={(event) => {
                     setAddress((previous) => ({
                       ...previous,
-                      country:
-                        event.target.value,
+                      country: event.target.value,
                     }));
 
-                    setAddressErrors(
-                      (previous) => ({
-                        ...previous,
-                        country: undefined,
-                      }),
-                    );
+                    setAddressErrors((previous) => ({
+                      ...previous,
+                      country: undefined,
+                    }));
                   }}
                   className={
                     addressErrors.country
@@ -954,9 +972,7 @@ export default function CheckoutForm() {
 
                 {addressErrors.country ? (
                   <p className="mt-1.5 text-xs font-semibold text-red-600">
-                    {
-                      addressErrors.country
-                    }
+                    {addressErrors.country}
                   </p>
                 ) : null}
               </div>
@@ -965,12 +981,8 @@ export default function CheckoutForm() {
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentStep(1)
-                }
-                className={
-                  secondaryButtonClass
-                }
+                onClick={() => setCurrentStep(1)}
+                className={secondaryButtonClass}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -978,12 +990,8 @@ export default function CheckoutForm() {
 
               <button
                 type="button"
-                onClick={
-                  continueToPayment
-                }
-                className={
-                  primaryButtonClass
-                }
+                onClick={continueToPayment}
+                className={primaryButtonClass}
               >
                 Continue to payment
                 <ArrowRight className="h-4 w-4" />
@@ -1063,31 +1071,29 @@ export default function CheckoutForm() {
                       </p>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        Pay securely using your
-                        card
+                        Payment integration will be
+                        enabled later
                       </p>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      {[
-                        "VISA",
-                        "MC",
-                        "AMEX",
-                      ].map((card) => (
-                        <span
-                          key={card}
-                          className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black text-slate-600"
-                        >
-                          {card}
-                        </span>
-                      ))}
+                      {["VISA", "MC", "AMEX"].map(
+                        (card) => (
+                          <span
+                            key={card}
+                            className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black text-slate-600"
+                          >
+                            {card}
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-800">
+                  <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800">
                     <LockKeyhole className="h-4 w-4" />
-                    Payment information is
-                    encrypted
+                    Online payment will be connected
+                    later.
                   </div>
                 </div>
 
@@ -1107,8 +1113,9 @@ export default function CheckoutForm() {
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
 
                   <p className="text-xs leading-5 text-slate-600">
-                    You will review your order
-                    before payment is submitted.
+                    You can review your order before
+                    creating it. Payment processing will
+                    be added separately.
                   </p>
                 </div>
               </div>
@@ -1117,12 +1124,8 @@ export default function CheckoutForm() {
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentStep(2)
-                }
-                className={
-                  secondaryButtonClass
-                }
+                onClick={() => setCurrentStep(2)}
+                className={secondaryButtonClass}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -1130,12 +1133,8 @@ export default function CheckoutForm() {
 
               <button
                 type="button"
-                onClick={
-                  continueToReview
-                }
-                className={
-                  primaryButtonClass
-                }
+                onClick={continueToReview}
+                className={primaryButtonClass}
               >
                 Review your order
                 <ArrowRight className="h-4 w-4" />
@@ -1155,9 +1154,7 @@ export default function CheckoutForm() {
       >
         <button
           type="button"
-          onClick={
-            continueToReview
-          }
+          onClick={continueToReview}
           className="flex w-full items-start justify-between gap-5 px-5 py-5 text-left sm:px-6"
         >
           <div className="flex min-w-0 gap-4">
@@ -1181,16 +1178,14 @@ export default function CheckoutForm() {
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                Confirm your details before
-                placing the order.
+                Confirm your details before placing the
+                order.
               </p>
             </div>
           </div>
 
           <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
-            {currentStep === 4
-              ? "Active"
-              : "Open"}
+            {currentStep === 4 ? "Active" : "Open"}
           </span>
         </button>
 
@@ -1200,13 +1195,10 @@ export default function CheckoutForm() {
               <ReviewCard
                 icon={UserRound}
                 title="Contact"
-                onEdit={() =>
-                  setCurrentStep(1)
-                }
+                onEdit={() => setCurrentStep(1)}
               >
                 <p className="font-bold text-slate-950">
-                  {contact.firstName}{" "}
-                  {contact.lastName}
+                  {contact.firstName} {contact.lastName}
                 </p>
 
                 <p className="mt-1 text-sm text-slate-600">
@@ -1221,9 +1213,7 @@ export default function CheckoutForm() {
               <ReviewCard
                 icon={MapPin}
                 title="Shipping address"
-                onEdit={() =>
-                  setCurrentStep(2)
-                }
+                onEdit={() => setCurrentStep(2)}
               >
                 <p className="font-bold text-slate-950">
                   {address.street}
@@ -1233,8 +1223,7 @@ export default function CheckoutForm() {
                 </p>
 
                 <p className="mt-1 text-sm text-slate-600">
-                  {address.city},{" "}
-                  {address.state}{" "}
+                  {address.city}, {address.state}{" "}
                   {address.zip}
                 </p>
 
@@ -1246,17 +1235,15 @@ export default function CheckoutForm() {
               <ReviewCard
                 icon={CreditCard}
                 title="Payment"
-                onEdit={() =>
-                  setCurrentStep(3)
-                }
+                onEdit={() => setCurrentStep(3)}
               >
                 <p className="font-bold text-slate-950">
-                  Credit / Debit Card
+                  Payment pending
                 </p>
 
                 <p className="mt-1 flex items-center gap-2 text-sm text-slate-600">
                   <LockKeyhole className="h-4 w-4" />
-                  Secure payment
+                  Payment integration will be added later
                 </p>
               </ReviewCard>
             </div>
@@ -1267,31 +1254,53 @@ export default function CheckoutForm() {
 
                 <div>
                   <p className="text-sm font-bold text-emerald-950">
-                    Ready for final
-                    confirmation
+                    Ready for final confirmation
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-emerald-800">
-                    Review your order
-                    summary and total before
-                    placing the order.
+                    Review your order summary and delivery
+                    information before creating the order.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6">
+            {orderError ? (
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+                <p className="text-sm font-semibold text-red-700">
+                  {orderError}
+                </p>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentStep(3)
-                }
-                className={
-                  secondaryButtonClass
-                }
+                onClick={() => setCurrentStep(3)}
+                disabled={submittingOrder}
+                className={secondaryButtonClass}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to payment
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePlaceOrder}
+                disabled={submittingOrder}
+                className={`${primaryButtonClass} w-full sm:w-auto`}
+              >
+                {submittingOrder ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Placing order...
+                  </>
+                ) : (
+                  <>
+                    <PackageCheck className="h-4 w-4" />
+                    Place order
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1325,9 +1334,7 @@ function ReviewCard({
               {title}
             </p>
 
-            <div className="mt-2">
-              {children}
-            </div>
+            <div className="mt-2">{children}</div>
           </div>
         </div>
 

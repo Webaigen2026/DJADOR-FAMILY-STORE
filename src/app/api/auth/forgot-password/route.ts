@@ -3,6 +3,7 @@ import { z } from "zod";
 import crypto from "crypto";
 
 import { prisma } from "../../../../lib/prisma";
+import { sendPasswordResetEmail } from "../../../../lib/email";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email(),
@@ -11,6 +12,7 @@ const forgotPasswordSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
     const parsed = forgotPasswordSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -29,7 +31,7 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({
         success: true,
-        message: "If the email exists, a reset link has been created.",
+        message: "If the email exists, a reset link has been sent.",
       });
     }
 
@@ -43,16 +45,20 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(
-      `Reset link for ${email}: ${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
-    );
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    const resetUrl = `${appUrl}/reset-password?token=${token}`;
+
+    await sendPasswordResetEmail(email, resetUrl);
 
     return NextResponse.json({
       success: true,
-      message: "If the email exists, a reset link has been created.",
+      message: "If the email exists, a reset link has been sent.",
     });
   } catch (error) {
     console.error("Forgot password error:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to process forgot password." },
       { status: 500 }

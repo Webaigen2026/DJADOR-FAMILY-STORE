@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { prisma } from "../../../../lib/prisma";
+import { sendVerificationOtpEmail } from "../../../../lib/email";
 
 const registerSchema = z.object({
   name: z.string().min(2).max(50).optional(),
@@ -26,7 +27,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, password } = parsed.data;
+    const { name, password } = parsed.data;
+    const email = parsed.data.email.toLowerCase();
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -61,14 +63,15 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(`OTP for ${email}: ${otp}`);
+    await sendVerificationOtpEmail(email, otp);
 
     return NextResponse.json({
       success: true,
-      message: "User registered. OTP generated.",
+      message: "User registered. Verification code sent.",
     });
   } catch (error) {
     console.error("Register error:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to register user." },
       { status: 500 }

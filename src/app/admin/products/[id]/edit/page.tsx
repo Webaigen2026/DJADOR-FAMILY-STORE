@@ -1,7 +1,12 @@
 import Link from "next/link";
+
 import { redirect } from "next/navigation";
+
 import { put } from "@vercel/blob";
+
 import { prisma } from "../../../../../lib/prisma";
+
+import { auth } from "../../../../../auth";
 
 async function saveUploadedImages(files: File[]) {
   const urls: string[] = [];
@@ -33,6 +38,12 @@ async function saveUploadedImages(files: File[]) {
 async function setMainImage(productId: string, imageUrl: string) {
   "use server";
 
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
   await prisma.product.update({
     where: { id: productId },
     data: { imageUrl },
@@ -43,6 +54,12 @@ async function setMainImage(productId: string, imageUrl: string) {
 
 async function deleteProductImage(productId: string, imageId: string) {
   "use server";
+
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
 
   await prisma.productImage.delete({
     where: { id: imageId },
@@ -66,25 +83,49 @@ async function deleteProductImage(productId: string, imageId: string) {
 async function updateProduct(id: string, formData: FormData) {
   "use server";
 
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
   const files = formData.getAll("images") as File[];
+
   const uploadedUrls = await saveUploadedImages(files);
 
-  const currentImageUrl = String(formData.get("currentImageUrl") || "").trim();
+  const currentImageUrl = String(
+    formData.get("currentImageUrl") || ""
+  ).trim();
 
   const mainImageUrl =
-    uploadedUrls.length > 0 ? uploadedUrls[0] : currentImageUrl || null;
+    uploadedUrls.length > 0
+      ? uploadedUrls[0]
+      : currentImageUrl || null;
 
   await prisma.product.update({
     where: { id },
     data: {
       name: String(formData.get("name") || "").trim(),
-      description: String(formData.get("description") || "").trim(),
+
+      description: String(
+        formData.get("description") || ""
+      ).trim(),
+
       price: Number(formData.get("price") || 0),
-      originalPrice: Number(formData.get("originalPrice") || 0) || null,
-      brand: String(formData.get("brand") || "").trim() || null,
-      category: String(formData.get("category") || "").trim() || null,
+
+      originalPrice:
+        Number(formData.get("originalPrice") || 0) || null,
+
+      brand:
+        String(formData.get("brand") || "").trim() || null,
+
+      category:
+        String(formData.get("category") || "").trim() || null,
+
       imageUrl: mainImageUrl,
+
       stock: Number(formData.get("stock") || 0),
+
       isActive: formData.get("isActive") === "on",
     },
   });
@@ -124,9 +165,11 @@ export default async function EditProductPage({
           <p className="text-sm font-semibold text-green-600">
             Admin Dashboard / Products / Edit
           </p>
+
           <h1 className="mt-2 text-4xl font-bold text-slate-950">
             Edit Product
           </h1>
+
           <p className="mt-2 text-slate-600">
             Update product details, pricing, stock, visibility, and images.
           </p>
@@ -137,27 +180,68 @@ export default async function EditProductPage({
           className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl"
         >
           <div className="grid gap-6">
-            <input name="name" defaultValue={product.name} required className="w-full rounded-xl border border-slate-300 px-4 py-3" />
+            <input
+              name="name"
+              defaultValue={product.name}
+              required
+              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            />
 
             <div className="grid gap-5 md:grid-cols-2">
-              <input name="category" defaultValue={product.category || ""} className="w-full rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="brand" defaultValue={product.brand || ""} className="w-full rounded-xl border border-slate-300 px-4 py-3" />
+              <input
+                name="category"
+                defaultValue={product.category || ""}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3"
+              />
+
+              <input
+                name="brand"
+                defaultValue={product.brand || ""}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3"
+              />
             </div>
 
-            <textarea name="description" rows={5} defaultValue={product.description} className="w-full rounded-xl border border-slate-300 px-4 py-3" />
+            <textarea
+              name="description"
+              rows={5}
+              defaultValue={product.description}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            />
 
             <div className="grid gap-5 md:grid-cols-3">
-              <input name="price" type="number" defaultValue={product.price} className="w-full rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="originalPrice" type="number" defaultValue={product.originalPrice || ""} className="w-full rounded-xl border border-slate-300 px-4 py-3" />
-              <input name="stock" type="number" defaultValue={product.stock} className="w-full rounded-xl border border-slate-300 px-4 py-3" />
+              <input
+                name="price"
+                type="number"
+                defaultValue={product.price}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3"
+              />
+
+              <input
+                name="originalPrice"
+                type="number"
+                defaultValue={product.originalPrice || ""}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3"
+              />
+
+              <input
+                name="stock"
+                type="number"
+                defaultValue={product.stock}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3"
+              />
             </div>
 
-            <input type="hidden" name="currentImageUrl" value={product.imageUrl || ""} />
+            <input
+              type="hidden"
+              name="currentImageUrl"
+              value={product.imageUrl || ""}
+            />
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
                 Add More Product Images
               </label>
+
               <input
                 name="images"
                 type="file"
@@ -165,6 +249,7 @@ export default async function EditProductPage({
                 accept="image/*"
                 className="w-full rounded-xl border border-slate-300 px-4 py-3"
               />
+
               <p className="mt-2 text-xs text-slate-500">
                 Upload more images without removing existing product images.
               </p>
@@ -176,7 +261,10 @@ export default async function EditProductPage({
                 name="isActive"
                 defaultChecked={product.isActive}
               />
-              <span className="font-medium">Product Active</span>
+
+              <span className="font-medium">
+                Product Active
+              </span>
             </label>
 
             <div className="rounded-2xl border border-slate-200 p-4">
@@ -233,7 +321,9 @@ export default async function EditProductPage({
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-500">No images uploaded</p>
+                  <p className="text-sm text-slate-500">
+                    No images uploaded
+                  </p>
                 )}
               </div>
             </div>
