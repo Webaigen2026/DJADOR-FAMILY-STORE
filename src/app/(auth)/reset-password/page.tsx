@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import AuthLayout from "../../../components/auth/auth-layout";
 import ResetPasswordForm from "../../../components/auth/reset-password-form";
 
@@ -7,7 +9,9 @@ export default function ResetPasswordPage() {
       title="Reset your password"
       subtitle="Choose a new password to regain access to your account."
     >
-      <ResetPasswordForm />
+      <Suspense fallback={null}>
+        <ResetPasswordForm />
+      </Suspense>
     </AuthLayout>
   );
 }

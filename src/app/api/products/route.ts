@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "../../../lib/prisma";
+import { auth } from "../../../auth";
+
 import {
   createProduct,
   getActiveProducts,
@@ -9,14 +12,59 @@ import {
   updateProduct,
   deleteProduct,
 } from "../../../lib/db/products";
+
 import {
   createProductSchema,
   updateProductSchema,
 } from "../../../lib/validations/product";
 
+/**
+ * Check whether the current request belongs to an ADMIN.
+ */
+async function requireAdmin() {
+  const session = await auth();
+
+  if (!session?.user) {
+    return {
+      authorized: false as const,
+      response: NextResponse.json(
+        {
+          success: false,
+          error: "Authentication required",
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return {
+      authorized: false as const,
+      response: NextResponse.json(
+        {
+          success: false,
+          error: "Admin access required",
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    authorized: true as const,
+    session,
+  };
+}
+
+/* =========================================================
+   GET PRODUCTS
+   Public because customers need product information.
+========================================================= */
+
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
+
     const id = searchParams.get("id");
     const slug = searchParams.get("slug");
     const activeOnly = searchParams.get("activeOnly");
@@ -26,12 +74,18 @@ export async function GET(req: NextRequest) {
 
       if (!product) {
         return NextResponse.json(
-          { success: false, error: "Product not found" },
+          {
+            success: false,
+            error: "Product not found",
+          },
           { status: 404 }
         );
       }
 
-      return NextResponse.json({ success: true, product });
+      return NextResponse.json({
+        success: true,
+        product,
+      });
     }
 
     if (slug) {
@@ -39,29 +93,55 @@ export async function GET(req: NextRequest) {
 
       if (!product) {
         return NextResponse.json(
-          { success: false, error: "Product not found" },
+          {
+            success: false,
+            error: "Product not found",
+          },
           { status: 404 }
         );
       }
 
-      return NextResponse.json({ success: true, product });
+      return NextResponse.json({
+        success: true,
+        product,
+      });
     }
 
     const products =
-      activeOnly === "true" ? await getActiveProducts() : await getAllProducts();
+      activeOnly === "true"
+        ? await getActiveProducts()
+        : await getAllProducts();
 
-    return NextResponse.json({ success: true, products });
+    return NextResponse.json({
+      success: true,
+      products,
+    });
   } catch (error) {
     console.error("GET /api/products error:", error);
+
     return NextResponse.json(
-      { success: false, error: "Failed to fetch products" },
+      {
+        success: false,
+        error: "Failed to fetch products",
+      },
       { status: 500 }
     );
   }
 }
 
+/* =========================================================
+   CREATE PRODUCT
+   ADMIN ONLY
+========================================================= */
+
 export async function POST(req: NextRequest) {
   try {
+    const admin = await requireAdmin();
+
+    if (!admin.authorized) {
+      return admin.response;
+    }
+
     const body = await req.json();
 
     const parsed = createProductSchema.safeParse({
@@ -72,18 +152,26 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: parsed.error.flatten() },
+        {
+          success: false,
+          error: parsed.error.flatten(),
+        },
         { status: 400 }
       );
     }
 
     const existingSlug = await prisma.product.findUnique({
-      where: { slug: parsed.data.slug },
+      where: {
+        slug: parsed.data.slug,
+      },
     });
 
     if (existingSlug) {
       return NextResponse.json(
-        { success: false, error: "Slug already exists" },
+        {
+          success: false,
+          error: "Slug already exists",
+        },
         { status: 409 }
       );
     }
@@ -94,20 +182,38 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(
-      { success: true, product },
+      {
+        success: true,
+        product,
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error("POST /api/products error:", error);
+
     return NextResponse.json(
-      { success: false, error: "Failed to create product" },
+      {
+        success: false,
+        error: "Failed to create product",
+      },
       { status: 500 }
     );
   }
 }
 
+/* =========================================================
+   UPDATE PRODUCT
+   ADMIN ONLY
+========================================================= */
+
 export async function PUT(req: NextRequest) {
   try {
+    const admin = await requireAdmin();
+
+    if (!admin.authorized) {
+      return admin.response;
+    }
+
     const body = await req.json();
 
     const parsed = updateProductSchema.safeParse({
@@ -118,7 +224,10 @@ export async function PUT(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: parsed.error.flatten() },
+        {
+          success: false,
+          error: parsed.error.flatten(),
+        },
         { status: 400 }
       );
     }
@@ -126,24 +235,34 @@ export async function PUT(req: NextRequest) {
     const { id, ...updateData } = parsed.data;
 
     const existing = await prisma.product.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
     });
 
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: "Product not found" },
+        {
+          success: false,
+          error: "Product not found",
+        },
         { status: 404 }
       );
     }
 
     if (updateData.slug && updateData.slug !== existing.slug) {
       const slugTaken = await prisma.product.findUnique({
-        where: { slug: updateData.slug },
+        where: {
+          slug: updateData.slug,
+        },
       });
 
       if (slugTaken) {
         return NextResponse.json(
-          { success: false, error: "Slug already exists" },
+          {
+            success: false,
+            error: "Slug already exists",
+          },
           { status: 409 }
         );
       }
@@ -151,38 +270,68 @@ export async function PUT(req: NextRequest) {
 
     const product = await updateProduct(id, {
       ...updateData,
-      imageUrl: updateData.imageUrl === "" ? undefined : updateData.imageUrl,
+      imageUrl:
+        updateData.imageUrl === ""
+          ? undefined
+          : updateData.imageUrl,
     });
 
-    return NextResponse.json({ success: true, product });
+    return NextResponse.json({
+      success: true,
+      product,
+    });
   } catch (error) {
     console.error("PUT /api/products error:", error);
+
     return NextResponse.json(
-      { success: false, error: "Failed to update product" },
+      {
+        success: false,
+        error: "Failed to update product",
+      },
       { status: 500 }
     );
   }
 }
 
+/* =========================================================
+   DELETE PRODUCT
+   ADMIN ONLY
+========================================================= */
+
 export async function DELETE(req: NextRequest) {
   try {
+    const admin = await requireAdmin();
+
+    if (!admin.authorized) {
+      return admin.response;
+    }
+
     const searchParams = req.nextUrl.searchParams;
+
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: "Product id is required" },
+        {
+          success: false,
+          error: "Product id is required",
+        },
         { status: 400 }
       );
     }
 
     const existing = await prisma.product.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
     });
 
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: "Product not found" },
+        {
+          success: false,
+          error: "Product not found",
+        },
         { status: 404 }
       );
     }
@@ -195,8 +344,12 @@ export async function DELETE(req: NextRequest) {
     });
   } catch (error) {
     console.error("DELETE /api/products error:", error);
+
     return NextResponse.json(
-      { success: false, error: "Failed to delete product" },
+      {
+        success: false,
+        error: "Failed to delete product",
+      },
       { status: 500 }
     );
   }

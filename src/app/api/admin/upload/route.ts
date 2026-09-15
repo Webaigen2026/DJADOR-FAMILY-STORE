@@ -1,40 +1,41 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { auth } from "../../../../auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  console.log("[UPLOAD] request entered /api/admin/upload");
-
-  // Temporary diagnostic: route does not enforce auth today.
-  // Log presence of session cookie only (true/false) — no cookie values.
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  const hasSessionCookie =
-    cookieHeader.includes("authjs.session-token") ||
-    cookieHeader.includes("__Secure-authjs.session-token") ||
-    cookieHeader.includes("next-auth.session-token") ||
-    cookieHeader.includes("__Secure-next-auth.session-token");
-  console.log("[UPLOAD] authenticated (session cookie present):", hasSessionCookie);
-
-  const hasBlobToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-  console.log("[UPLOAD] BLOB_READ_WRITE_TOKEN exists:", hasBlobToken);
-
   try {
-    const formData = await req.formData();
-    const files = formData.getAll("files") as File[];
+    // Require authenticated ADMIN user
+    const session = await auth();
 
-    console.log("[UPLOAD] files count:", files.length);
-    for (const file of files) {
-      console.log("[UPLOAD] file:", {
-        name: file?.name ?? null,
-        type: file?.type ?? null,
-        size: file?.size ?? null,
-      });
+    if (!session?.user) {
+      return NextResponse.json(
+        {
+          error: "Authentication required",
+        },
+        { status: 401 }
+      );
     }
+
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        {
+          error: "Admin access required",
+        },
+        { status: 403 }
+      );
+    }
+
+    const formData = await req.formData();
+
+    const files = formData.getAll("files") as File[];
 
     if (!files.length) {
       return NextResponse.json(
-        { error: "No files uploaded" },
+        {
+          error: "No files uploaded",
+        },
         { status: 400 }
       );
     }
@@ -42,7 +43,9 @@ export async function POST(req: Request) {
     const urls: string[] = [];
 
     for (const file of files) {
-      if (!file || file.size === 0) continue;
+      if (!file || file.size === 0) {
+        continue;
+      }
 
       const safeName = file.name
         .replace(/\s+/g, "-")
@@ -61,21 +64,15 @@ export async function POST(req: Request) {
       urls.push(blob.url);
     }
 
-    return NextResponse.json({ urls });
+    return NextResponse.json({
+      urls,
+    });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : String(error);
-    const stack = error instanceof Error ? error.stack : undefined;
+    console.error("POST /api/admin/upload error:", error);
 
-    console.error("[UPLOAD] exception message:", message);
-    console.error("[UPLOAD] exception stack:", stack ?? "(no stack)");
-    console.error("UPLOAD_ERROR", error);
-
-    // Temporary diagnostic: return the real exception message (was hardcoded).
     return NextResponse.json(
       {
-        error: message,
-        hasBlobToken,
+        error: "Failed to upload product images",
       },
       { status: 500 }
     );

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { auth } from "../../../../auth";
 import { prisma } from "../../../../lib/prisma";
 
 function makeSlug(name: string) {
@@ -21,6 +23,26 @@ type VariantInput = {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized.",
+        },
+        { status: 401 }
+      );
+    }
+
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        {
+          error: "Forbidden. Admin access required.",
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
 
     const name = String(body.name || "").trim();
@@ -34,8 +56,8 @@ export async function POST(req: Request) {
     const imageUrls = Array.isArray(body.imageUrls)
       ? body.imageUrls
       : Array.isArray(body.images)
-      ? body.images
-      : [];
+        ? body.images
+        : [];
 
     const mainImageUrl =
       imageUrls[0] || String(body.imageUrl || "").trim();
@@ -49,16 +71,26 @@ export async function POST(req: Request) {
     const variants = rawVariants
       .map((variant) => ({
         size: variant.size ? String(variant.size).trim() : null,
-        color: variant.color ? String(variant.color).trim() : null,
+
+        color: variant.color
+          ? String(variant.color).trim()
+          : null,
+
         stock: Math.max(0, Number(variant.stock || 0)),
+
         price:
           Number(variant.price) > 0
             ? Number(variant.price)
             : null,
-        sku: variant.sku ? String(variant.sku).trim() : null,
+
+        sku: variant.sku
+          ? String(variant.sku).trim()
+          : null,
+
         imageUrl: variant.imageUrl
           ? String(variant.imageUrl).trim()
           : null,
+
         isActive:
           typeof variant.isActive === "boolean"
             ? variant.isActive
@@ -108,8 +140,10 @@ export async function POST(req: Request) {
         slug,
         description,
         price,
+
         originalPrice:
           originalPrice > 0 ? originalPrice : null,
+
         brand: brand || null,
         category: category || null,
         subCategory: subCategory || null,

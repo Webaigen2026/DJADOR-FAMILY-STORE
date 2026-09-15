@@ -72,7 +72,7 @@ export default function Navbar({
 }: NavbarProps) {
   const { data: session } = useSession();
   const { cartCount: liveCartCount } = useCart();
-  const cartCount = liveCartCount || cartCountProp;
+  const cartCount = liveCartCount;
 
   const [accountOpen, setAccountOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -586,53 +586,51 @@ export default function Navbar({
                       <SectionLabel>Your account</SectionLabel>
 
                       <AccountLink
-                        href="/profile"
+                        href="/account/profile"
                         icon={User}
                         label="My profile"
                         onClick={closeDesktopMenus}
                       />
                       <AccountLink
-                        href="/orders"
+                        href="/account/orders"
                         icon={Package}
                         label="My orders"
                         onClick={closeDesktopMenus}
                       />
                       <AccountLink
-                        href="/wishlist"
+                        href="/account/wishlist"
                         icon={Heart}
                         label="Wishlist"
                         badge={wishlistCount}
                         onClick={closeDesktopMenus}
                       />
                       <AccountLink
-                        href="/notifications"
+                        href="/account/notifications"
                         icon={Bell}
                         label="Notifications"
                         badge={notificationCount}
                         onClick={closeDesktopMenus}
                       />
 
-                      <button
-                        type="button"
-                        onClick={openLocationModal}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
-                      >
-                        <MapPin className="h-[18px] w-[18px] text-slate-400" />
-                        <span className="flex-1">Saved addresses</span>
-                      </button>
+<AccountLink
+  href="/account/addresses"
+  icon={MapPin}
+  label="Saved addresses"
+  onClick={closeDesktopMenus}
+/>
 
                       <div className="my-3 border-t border-slate-100" />
 
                       <SectionLabel>Customer care</SectionLabel>
 
                       <AccountLink
-                        href="/support"
+                        href="/account/help"
                         icon={CircleHelp}
                         label="Help center"
                         onClick={closeDesktopMenus}
                       />
                       <AccountLink
-                        href="/returns"
+                        href="/account/returns"
                         icon={RotateCcw}
                         label="Returns & refunds"
                         onClick={closeDesktopMenus}
@@ -661,16 +659,16 @@ export default function Navbar({
             </div>
 
             <HeaderIconLink
-              href="/wishlist"
+              href="/account/wishlist"
               label="Wishlist"
               count={wishlistCount}
               className={iconActionClass}
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-5 w-5" /> 
             </HeaderIconLink>
 
             <HeaderIconLink
-              href="/notifications"
+              href="/account/notifications"
               label="Notifications"
               count={notificationCount}
               className={iconActionClass}
@@ -724,7 +722,7 @@ export default function Navbar({
 
           <div className="ml-auto flex items-center gap-1 lg:hidden">
             <Link
-              href="/wishlist"
+              href="/account/wishlist"
               aria-label={`Wishlist${
                 wishlistCount ? `, ${wishlistCount} items` : ""
               }`}

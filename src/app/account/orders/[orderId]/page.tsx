@@ -3,9 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
   Headphones,
-  LockKeyhole,
   PackageCheck,
-  ShieldCheck,
+  ReceiptText,
 } from "lucide-react";
 
 import { auth } from "../../../../auth";
@@ -28,6 +27,10 @@ type OrderDetailsPageProps = {
 export default async function OrderDetailsPage({
   params,
 }: OrderDetailsPageProps) {
+  // ---------------------------------------------------------
+  // Authentication
+  // ---------------------------------------------------------
+
   const session = await auth();
 
   if (!session?.user) {
@@ -40,22 +43,32 @@ export default async function OrderDetailsPage({
     redirect("/login");
   }
 
+  // ---------------------------------------------------------
+  // Order ID
+  // ---------------------------------------------------------
+
   const { orderId } = await params;
 
   if (!orderId?.trim()) {
     notFound();
   }
 
+  // ---------------------------------------------------------
+  // Load order
+  // ---------------------------------------------------------
+
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
       userId,
     },
+
     include: {
       items: {
         orderBy: {
           createdAt: "asc",
         },
+
         include: {
           product: {
             select: {
@@ -65,6 +78,7 @@ export default async function OrderDetailsPage({
               imageUrl: true,
             },
           },
+
           variant: {
             select: {
               id: true,
@@ -78,6 +92,7 @@ export default async function OrderDetailsPage({
         orderBy: {
           createdAt: "desc",
         },
+
         select: {
           id: true,
           status: true,
@@ -103,7 +118,21 @@ export default async function OrderDetailsPage({
     notFound();
   }
 
+  // ---------------------------------------------------------
+  // Payment
+  // ---------------------------------------------------------
+
   const latestPayment = order.payments[0] ?? null;
+
+  const paymentStatus =
+    latestPayment?.status ?? order.paymentStatus;
+
+  const isPaymentCaptured =
+    paymentStatus === "CAPTURED";
+
+  // ---------------------------------------------------------
+  // Order totals
+  // ---------------------------------------------------------
 
   const totalQuantity = order.items.reduce(
     (total, item) => total + item.quantity,
@@ -111,12 +140,18 @@ export default async function OrderDetailsPage({
   );
 
   const itemsSubtotal = order.items.reduce(
-    (total, item) => total + item.unitPrice * item.quantity,
+    (total, item) =>
+      total + item.unitPrice * item.quantity,
     0
   );
 
+  // ---------------------------------------------------------
+  // Available actions
+  // ---------------------------------------------------------
+
   const canCancel =
-    order.status === "PENDING_PAYMENT" || order.status === "PAID";
+    order.status === "PENDING_PAYMENT" ||
+    order.status === "PAID";
 
   const canBuyAgain =
     order.status === "COMPLETED" ||
@@ -134,9 +169,14 @@ export default async function OrderDetailsPage({
       order.status === "DELIVERED" ||
       order.status === "COMPLETED");
 
+  // ---------------------------------------------------------
+  // Page
+  // ---------------------------------------------------------
+
   return (
     <div className="space-y-4">
       {/* Back navigation */}
+
       <div className="flex items-center justify-between gap-4">
         <Link
           href="/account/orders"
@@ -155,7 +195,8 @@ export default async function OrderDetailsPage({
         </Link>
       </div>
 
-      {/* Main order heading */}
+      {/* Order header */}
+
       <OrderHeader
         order={{
           id: order.id,
@@ -165,12 +206,12 @@ export default async function OrderDetailsPage({
           totalAmount: order.totalAmount,
           trackingNumber: order.trackingNumber,
           itemCount: totalQuantity,
-          paymentStatus:
-            latestPayment?.status ?? order.paymentStatus,
+          paymentStatus,
         }}
       />
 
       {/* Order lifecycle */}
+
       <OrderProgress
         status={order.status}
         createdAt={order.createdAt}
@@ -179,6 +220,7 @@ export default async function OrderDetailsPage({
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
         {/* Main column */}
+
         <main className="min-w-0 space-y-4">
           <OrderItems
             orderId={order.id}
@@ -186,13 +228,19 @@ export default async function OrderDetailsPage({
             items={order.items.map((item) => ({
               id: item.id,
               productId: item.product.id,
+
               productName:
-                item.productName || item.product.name,
-              productSlug: item.product.slug,
+                item.productName ||
+                item.product.name,
+
+              productSlug:
+                item.product.slug,
+
               productImage:
                 item.variant?.imageUrl ||
                 item.product.imageUrl ||
                 null,
+
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               size: item.size,
@@ -201,6 +249,8 @@ export default async function OrderDetailsPage({
             }))}
           />
 
+          {/* Shipping + Payment */}
+
           <div className="grid gap-4 lg:grid-cols-2">
             <ShippingCard
               shipping={{
@@ -208,39 +258,80 @@ export default async function OrderDetailsPage({
                   order.shippingName ||
                   order.user.name ||
                   "Customer",
-                email: order.user.email || "",
+
+                email:
+                  order.user.email || "",
+
                 phone:
                   order.shippingPhone ||
                   order.user.phone ||
                   "",
-                addressLine1: order.shippingAddress,
-                addressLine2: null,
-                city: order.shippingCity,
-                state: order.shippingState,
-                postalCode: order.shippingZip,
-                country: null,
-                trackingNumber: order.trackingNumber,
-                carrier: null,
+
+                addressLine1:
+                  order.shippingAddress,
+
+                addressLine2:
+                  null,
+
+                city:
+                  order.shippingCity,
+
+                state:
+                  order.shippingState,
+
+                postalCode:
+                  order.shippingZip,
+
+                country:
+                  null,
+
+                trackingNumber:
+                  order.trackingNumber,
+
+                carrier:
+                  null,
               }}
             />
 
             <PaymentCard
+              orderStatus={order.status}
               payment={
                 latestPayment
                   ? {
-                      status: latestPayment.status,
-                      provider: latestPayment.provider,
+                      status:
+                        latestPayment.status,
+
+                      provider:
+                        latestPayment.provider,
+
                       transactionId:
                         latestPayment.providerPaymentId,
-                      amount: latestPayment.amount,
-                      createdAt: latestPayment.createdAt,
+
+                      amount:
+                        latestPayment.status === "CAPTURED"
+                          ? latestPayment.amount
+                          : 0,
+
+                      createdAt:
+                        latestPayment.status === "CAPTURED"
+                          ? latestPayment.createdAt
+                          : null,
                     }
                   : {
-                      status: order.paymentStatus,
-                      provider: null,
-                      transactionId: null,
-                      amount: order.totalAmount,
-                      createdAt: order.createdAt,
+                      status:
+                        order.paymentStatus,
+
+                      provider:
+                        null,
+
+                      transactionId:
+                        null,
+
+                      amount:
+                        0,
+
+                      createdAt:
+                        null,
                     }
               }
             />
@@ -248,6 +339,7 @@ export default async function OrderDetailsPage({
         </main>
 
         {/* Sidebar */}
+
         <aside className="space-y-4 xl:sticky xl:top-24">
           <OrderSummary
             subtotal={itemsSubtotal}
@@ -269,41 +361,30 @@ export default async function OrderDetailsPage({
             canBuyAgain={canBuyAgain}
           />
 
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
+          {/* Payment information */}
 
-              <div>
-                <h2 className="text-sm font-bold text-slate-950">
-                  Purchase protection
-                </h2>
+          {!isPaymentCaptured ? (
+            <section className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                  <ReceiptText className="h-5 w-5" />
+                </span>
 
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Your payment and account information are securely
-                  protected.
-                </p>
+                <div>
+                  <h2 className="text-sm font-bold text-amber-950">
+                    Payment pending
+                  </h2>
+
+                  <p className="mt-1 text-sm leading-6 text-amber-800">
+                    This order has been created, but no
+                    payment has been completed yet.
+                  </p>
+                </div>
               </div>
-            </div>
+            </section>
+          ) : null}
 
-            <div className="mt-4 flex items-start gap-3 border-t border-slate-200 pt-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                <LockKeyhole className="h-5 w-5" />
-              </span>
-
-              <div>
-                <h2 className="text-sm font-bold text-slate-950">
-                  Secure order
-                </h2>
-
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Sensitive payment information is never displayed on
-                  this page.
-                </p>
-              </div>
-            </div>
-          </section>
+          {/* Completed order */}
 
           {order.status === "COMPLETED" ? (
             <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
@@ -316,7 +397,8 @@ export default async function OrderDetailsPage({
                   </h2>
 
                   <p className="mt-1 text-sm leading-6 text-emerald-800">
-                    This order has been successfully fulfilled.
+                    This order has been successfully
+                    fulfilled.
                   </p>
                 </div>
               </div>

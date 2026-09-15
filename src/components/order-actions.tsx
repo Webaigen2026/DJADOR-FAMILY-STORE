@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+
 import {
   ArrowLeft,
-  Download,
   Loader2,
   MessageCircle,
   PackageSearch,
-  Receipt,
   RefreshCcw,
   ShoppingCart,
   Trash2,
@@ -37,6 +36,8 @@ type Props = {
   canBuyAgain: boolean;
 };
 
+type LoadingAction = "cancel" | "buyAgain" | "return" | null;
+
 export default function OrderActions({
   orderId,
   orderStatus,
@@ -44,42 +45,132 @@ export default function OrderActions({
   canTrack,
   canBuyAgain,
 }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] =
+    useState<LoadingAction>(null);
 
-  async function cancelOrder() {
-    if (
-      !confirm(
-        "Are you sure you want to cancel this order?"
-      )
-    ) {
-      return;
-    }
+  async function buyAgain() {
+    if (loadingAction) return;
 
     try {
-      setLoading(true);
+      setLoadingAction("buyAgain");
 
       const response = await fetch(
-        `/api/orders/${orderId}/cancel`,
+        `/api/orders/${orderId}/buy-again`,
         {
           method: "POST",
         }
       );
 
-      if (!response.ok) {
-        throw new Error();
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error ||
+            "Unable to add these items to your cart."
+        );
+      }
+
+      // Full navigation reloads the cart and navbar count.
+      window.location.href = "/cart";
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to add these items to your cart.";
+
+      alert(message);
+      setLoadingAction(null);
+    }
+  }
+
+  async function requestReturn() {
+    if (loadingAction) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to request a return for this order?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoadingAction("return");
+
+      const response = await fetch(
+        `/api/orders/${orderId}/return`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Unable to request return."
+        );
       }
 
       window.location.reload();
-    } catch {
-      alert("Unable to cancel order.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to request return.";
+
+      alert(message);
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
+    }
+  }
+
+  async function cancelOrder() {
+    if (loadingAction) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this order?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoadingAction("cancel");
+
+      const response = await fetch(
+        `/api/orders/${orderId}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Unable to cancel order."
+        );
+      }
+
+      window.location.reload();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to cancel order.";
+
+      alert(message);
+    } finally {
+      setLoadingAction(null);
     }
   }
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      {/* Header */}
       <div className="border-b border-slate-200 px-5 py-5">
         <h2 className="text-lg font-bold text-slate-950">
           Order Actions
@@ -91,9 +182,9 @@ export default function OrderActions({
       </div>
 
       <div className="grid gap-3 p-5">
-        {/* Track Package */}
         {canTrack && (
           <button
+            type="button"
             className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             <PackageSearch className="h-5 w-5" />
@@ -101,37 +192,48 @@ export default function OrderActions({
           </button>
         )}
 
-        {/* Buy Again */}
         {canBuyAgain && (
-          <Link
-            href={`/cart?buyAgain=${orderId}`}
-            className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-900 transition hover:bg-amber-300"
+          <button
+            type="button"
+            onClick={buyAgain}
+            disabled={loadingAction !== null}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-bold text-slate-900 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <ShoppingCart className="h-5 w-5" />
-            Buy Again
-          </Link>
-        )}
-
-        {/* Invoice */}
-        <button className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
-          <Receipt className="h-5 w-5" />
-          View Invoice
-        </button>
-
-        <button className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
-          <Download className="h-5 w-5" />
-          Download Invoice
-        </button>
-
-        {/* Return */}
-        {orderStatus === "COMPLETED" && (
-          <button className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
-            <RefreshCcw className="h-5 w-5" />
-            Request Return
+            {loadingAction === "buyAgain" ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Adding to Cart...
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-5 w-5" />
+                Buy Again
+              </>
+            )}
           </button>
         )}
 
-        {/* Contact */}
+        {orderStatus === "COMPLETED" && (
+          <button
+            type="button"
+            onClick={requestReturn}
+            disabled={loadingAction !== null}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loadingAction === "return" ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Requesting Return...
+              </>
+            ) : (
+              <>
+                <RefreshCcw className="h-5 w-5" />
+                Request Return
+              </>
+            )}
+          </button>
+        )}
+
         <Link
           href="/contact"
           className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
@@ -140,14 +242,14 @@ export default function OrderActions({
           Contact Support
         </Link>
 
-        {/* Cancel */}
         {canCancel && (
           <button
+            type="button"
             onClick={cancelOrder}
-            disabled={loading}
+            disabled={loadingAction !== null}
             className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? (
+            {loadingAction === "cancel" ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Cancelling...
@@ -161,7 +263,6 @@ export default function OrderActions({
           </button>
         )}
 
-        {/* Back */}
         <Link
           href="/account/orders"
           className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-200"
@@ -171,12 +272,11 @@ export default function OrderActions({
         </Link>
       </div>
 
-      {/* Footer */}
       <div className="border-t border-slate-200 bg-slate-50 px-5 py-4">
         <p className="text-center text-xs leading-5 text-slate-500">
-          Need help with this order? Our support team is available to
-          assist you with cancellations, returns, refunds, shipping,
-          and product questions.
+          Need help with this order? Our support team is
+          available to assist you with cancellations, returns,
+          refunds, shipping, and product questions.
         </p>
       </div>
     </section>
