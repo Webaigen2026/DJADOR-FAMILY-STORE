@@ -20,7 +20,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, code } = parsed.data;
+    const email = parsed.data.email.toLowerCase();
+const code = parsed.data.code;
 
     const otpRecord = await prisma.oTPCode.findFirst({
       where: {

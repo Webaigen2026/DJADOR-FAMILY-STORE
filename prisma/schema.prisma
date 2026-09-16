@@ -82,6 +82,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   otps          OTPCode[]
+  notifications Notification[]
   resetTokens   PasswordResetToken[]
 }
 
@@ -376,4 +377,23 @@ model Address {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Notifications
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("GENERAL")
+  href      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
 }

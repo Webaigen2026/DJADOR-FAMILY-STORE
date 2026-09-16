@@ -191,7 +191,7 @@ export default function HelpCenterPage() {
           </div>
 
           <Link
-            href="/contact"
+            href="/account/help"
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-bold text-white transition hover:bg-slate-800"
           >
             <ShoppingBag className="h-4 w-4" />

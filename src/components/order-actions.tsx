@@ -235,7 +235,7 @@ export default function OrderActions({
         )}
 
         <Link
-          href="/contact"
+          href="/account/help"
           className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
         >
           <MessageCircle className="h-5 w-5" />

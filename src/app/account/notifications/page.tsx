@@ -1,6 +1,35 @@
+import { redirect } from "next/navigation";
 import { Bell } from "lucide-react";
 
-export default function NotificationsPage() {
+import { auth } from "../../../auth";
+import { prisma } from "../../../lib/prisma";
+import NotificationList from "../../../components/notifications/notification-list";
+
+export const dynamic = "force-dynamic";
+
+export default async function NotificationsPage() {
+  const session = await auth();
+
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const notifications = await prisma.notification.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 100,
+  });
+
+  const unreadCount = notifications.filter(
+    (notification) => !notification.isRead
+  ).length;
+
   return (
     <div className="w-full">
       <div className="mb-8 border-b border-slate-200 pb-6">
@@ -8,9 +37,17 @@ export default function NotificationsPage() {
           <Bell className="h-6 w-6 text-slate-900" />
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
-              Notifications
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+                Notifications
+              </h1>
+
+              {unreadCount > 0 && (
+                <span className="rounded-full bg-slate-950 px-2 py-0.5 text-xs font-semibold text-white">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
 
             <p className="mt-1 text-sm text-slate-500">
               Stay updated on your orders, account activity, and important
@@ -20,19 +57,7 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
-        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-          <Bell className="h-7 w-7 text-slate-500" />
-        </div>
-
-        <h2 className="text-lg font-semibold text-slate-950">
-          No notifications yet
-        </h2>
-
-        <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-          Updates about your orders and account activity will appear here.
-        </p>
-      </div>
+      <NotificationList notifications={notifications} />
     </div>
   );
 }

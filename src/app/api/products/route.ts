@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "../../../lib/prisma";
+
 import { auth } from "../../../auth";
 
 import {
   createProduct,
   getActiveProducts,
-  getAllProducts,
   getProductById,
   getProductBySlug,
   updateProduct,
@@ -58,7 +58,7 @@ async function requireAdmin() {
 
 /* =========================================================
    GET PRODUCTS
-   Public because customers need product information.
+   PUBLIC - ONLY ACTIVE PRODUCTS
 ========================================================= */
 
 export async function GET(req: NextRequest) {
@@ -67,12 +67,11 @@ export async function GET(req: NextRequest) {
 
     const id = searchParams.get("id");
     const slug = searchParams.get("slug");
-    const activeOnly = searchParams.get("activeOnly");
 
     if (id) {
       const product = await getProductById(id);
 
-      if (!product) {
+      if (!product || !product.isActive) {
         return NextResponse.json(
           {
             success: false,
@@ -91,7 +90,7 @@ export async function GET(req: NextRequest) {
     if (slug) {
       const product = await getProductBySlug(slug);
 
-      if (!product) {
+      if (!product || !product.isActive) {
         return NextResponse.json(
           {
             success: false,
@@ -107,10 +106,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const products =
-      activeOnly === "true"
-        ? await getActiveProducts()
-        : await getAllProducts();
+    const products = await getActiveProducts();
 
     return NextResponse.json({
       success: true,

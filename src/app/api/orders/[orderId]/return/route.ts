@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "../../../../../auth";
 import { prisma } from "../../../../../lib/prisma";
 
@@ -73,6 +74,19 @@ export async function POST(
         { status: 409 }
       );
     }
+
+    // Create notification after successful return request.
+    const orderNumber = order.id.slice(-8).toUpperCase();
+
+    await prisma.notification.create({
+      data: {
+        userId: session.user.id,
+        title: "Return requested",
+        message: `Your return request for order #${orderNumber} has been submitted successfully.`,
+        type: "RETURN_REQUESTED",
+        href: `/account/orders/${order.id}`,
+      },
+    });
 
     return NextResponse.json({
       success: true,

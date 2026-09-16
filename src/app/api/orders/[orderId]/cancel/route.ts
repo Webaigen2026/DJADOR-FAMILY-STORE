@@ -42,7 +42,7 @@ export async function POST(
       );
     }
 
-    /*
+    /**
      * Security:
      * The user can only cancel an order that belongs
      * to their own account.
@@ -71,7 +71,7 @@ export async function POST(
       );
     }
 
-    /*
+    /**
      * For the current checkout implementation,
      * customer cancellation is allowed only while
      * the order is still waiting for payment.
@@ -83,8 +83,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error:
-            "This order can no longer be cancelled.",
+          error: "This order can no longer be cancelled.",
         },
         {
           status: 409,
@@ -92,13 +91,12 @@ export async function POST(
       );
     }
 
-    /*
+    /**
      * Important:
      * We currently DO NOT restore product inventory
      * here because unpaid order creation does not
      * decrement inventory.
      */
-
     const cancelledOrder = await prisma.order.updateMany({
       where: {
         id: order.id,
@@ -110,7 +108,7 @@ export async function POST(
       },
     });
 
-    /*
+    /**
      * updateMany also protects against a race where
      * the order status changed between the read and
      * update.
@@ -127,6 +125,21 @@ export async function POST(
         }
       );
     }
+
+    /**
+     * Create a notification after successful cancellation.
+     */
+    const orderNumber = order.id.slice(-8).toUpperCase();
+
+    await prisma.notification.create({
+      data: {
+        userId: session.user.id,
+        title: "Order cancelled",
+        message: `Your order #${orderNumber} has been cancelled successfully.`,
+        type: "ORDER_CANCELLED",
+        href: `/account/orders/${order.id}`,
+      },
+    });
 
     return NextResponse.json({
       success: true,
