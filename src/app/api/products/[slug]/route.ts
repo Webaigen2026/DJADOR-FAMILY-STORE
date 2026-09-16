@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { prisma } from "../../../../lib/prisma";
 
 export async function GET(
@@ -8,11 +9,14 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    const product = await prisma.product.findUnique({
-      where: { slug },
+    const product = await prisma.product.findFirst({
+      where: {
+        slug,
+        isActive: true,
+      },
       include: {
-        images: true
-      }
+        images: true,
+      },
     });
 
     if (!product) {

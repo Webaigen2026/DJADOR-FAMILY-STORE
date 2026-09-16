@@ -187,7 +187,19 @@ export async function POST(req: NextRequest) {
           cartId: cart.id,
         },
       });
-
+      
+      const orderNumber = createdOrder.id.slice(-8).toUpperCase();
+      
+      await tx.notification.create({
+        data: {
+          userId,
+          title: "Order received",
+          message: `We've received your order #${orderNumber}. You can follow its progress from your orders page.`,
+          type: "ORDER_RECEIVED",
+          href: `/account/orders/${createdOrder.id}`,
+        },
+      });
+      
       return createdOrder;
     });
 

@@ -105,6 +105,7 @@ async function advanceOrderStatus(orderId: string) {
     },
     select: {
       status: true,
+      userId: true,
     },
   });
 
@@ -147,8 +148,71 @@ async function advanceOrderStatus(orderId: string) {
     );
   }
 
+  const orderNumber = orderId.slice(-8).toUpperCase();
+
+  const notificationContent = {
+    PROCESSING: {
+      title: "Order processing",
+      message: `Your order #${orderNumber} is now being processed.`,
+      type: "ORDER_PROCESSING",
+    },
+
+    PACKING: {
+      title: "Order being packed",
+      message: `Your order #${orderNumber} is being packed and prepared for shipment.`,
+      type: "ORDER_PACKING",
+    },
+
+    READY_TO_SHIP: {
+      title: "Ready to ship",
+      message: `Your order #${orderNumber} is packed and ready to be shipped.`,
+      type: "ORDER_READY_TO_SHIP",
+    },
+
+    SHIPPED: {
+      title: "Order shipped",
+      message: `Your order #${orderNumber} has been shipped.`,
+      type: "ORDER_SHIPPED",
+    },
+
+    OUT_FOR_DELIVERY: {
+      title: "Out for delivery",
+      message: `Your order #${orderNumber} is out for delivery.`,
+      type: "ORDER_OUT_FOR_DELIVERY",
+    },
+
+    DELIVERED: {
+      title: "Order delivered",
+      message: `Your order #${orderNumber} has been delivered.`,
+      type: "ORDER_DELIVERED",
+    },
+
+    COMPLETED: {
+      title: "Order completed",
+      message: `Your order #${orderNumber} has been completed successfully.`,
+      type: "ORDER_COMPLETED",
+    },
+  } as const;
+
+  const notification =
+    notificationContent[
+      newStatus as keyof typeof notificationContent
+    ];
+
+  if (notification) {
+    await prisma.notification.create({
+      data: {
+        userId: order.userId,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        href: `/account/orders/${orderId}`,
+      },
+    });
+  }
+
   redirect(`/admin/orders/${orderId}`);
-}  
+} 
 
 /* ---------------------------------------------------------
    Cancel order
@@ -161,6 +225,19 @@ async function cancelOrder(orderId: string) {
 
   if (!session?.user || session.user.role !== "ADMIN") {
     throw new Error("Unauthorized");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found.");
   }
 
   const result = await prisma.order.updateMany({
@@ -187,6 +264,18 @@ async function cancelOrder(orderId: string) {
     );
   }
 
+  const orderNumber = orderId.slice(-8).toUpperCase();
+
+  await prisma.notification.create({
+    data: {
+      userId: order.userId,
+      title: "Order cancelled",
+      message: `Your order #${orderNumber} has been cancelled.`,
+      type: "ORDER_CANCELLED",
+      href: `/account/orders/${orderId}`,
+    },
+  });
+
   redirect(`/admin/orders/${orderId}`);
 }
 
@@ -201,6 +290,19 @@ async function markReturned(orderId: string) {
 
   if (!session?.user || session.user.role !== "ADMIN") {
     throw new Error("Unauthorized");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found.");
   }
 
   const result = await prisma.order.updateMany({
@@ -218,6 +320,18 @@ async function markReturned(orderId: string) {
       "This order is no longer waiting for return processing."
     );
   }
+
+  const orderNumber = orderId.slice(-8).toUpperCase();
+
+  await prisma.notification.create({
+    data: {
+      userId: order.userId,
+      title: "Return completed",
+      message: `Your returned item for order #${orderNumber} has been received successfully.`,
+      type: "ORDER_RETURNED",
+      href: `/account/orders/${orderId}`,
+    },
+  });
 
   redirect(`/admin/orders/${orderId}`);
 }

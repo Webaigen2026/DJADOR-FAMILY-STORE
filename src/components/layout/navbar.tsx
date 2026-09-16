@@ -78,7 +78,43 @@ export default function Navbar({
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [cartBadgePopKey, setCartBadgePopKey] = useState(0);
+  const [liveNotificationCount, setLiveNotificationCount] =
+  useState(notificationCount);
+  useEffect(() => {
+    if (!session?.user) {
+      setLiveNotificationCount(0);
+      return;
+    }
+  
+    async function loadNotificationCount() {
+      try {
+        const response = await fetch("/api/notifications", {
+          cache: "no-store",
+        });
+  
+        if (!response.ok) {
+          return;
+        }
+  
+        const data = await response.json();
+  
+        setLiveNotificationCount(
+          typeof data.unreadCount === "number"
+            ? data.unreadCount
+            : 0
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load notification count:",
+          error
+        );
+      }
+    }
+  
+    void loadNotificationCount();
+  }, [session?.user]);
 
   const [search, setSearch] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -608,7 +644,7 @@ export default function Navbar({
                         href="/account/notifications"
                         icon={Bell}
                         label="Notifications"
-                        badge={notificationCount}
+                        badge={liveNotificationCount}
                         onClick={closeDesktopMenus}
                       />
 
@@ -670,7 +706,7 @@ export default function Navbar({
             <HeaderIconLink
               href="/account/notifications"
               label="Notifications"
-              count={notificationCount}
+              count={liveNotificationCount}
               className={iconActionClass}
             >
               <Bell className="h-5 w-5" />
@@ -882,7 +918,7 @@ export default function Navbar({
                 onClick={closeMobileMenu}
               />
               <MobileMenuLink
-                href="/orders"
+                href="/account/orders"
                 icon={Package}
                 label="My orders"
                 onClick={closeMobileMenu}
@@ -895,12 +931,12 @@ export default function Navbar({
                 badge={wishlistCount}
               />
               <MobileMenuLink
-                href="/notifications"
-                icon={Bell}
-                label="Notifications"
-                onClick={closeMobileMenu}
-                badge={notificationCount}
-              />
+  href="/account/notifications"
+  icon={Bell}
+  label="Notifications"
+  onClick={closeMobileMenu}
+  badge={liveNotificationCount}
+/>
               <MobileMenuLink
                 href="/cart"
                 icon={ShoppingCart}
@@ -929,13 +965,13 @@ export default function Navbar({
               <SectionLabel>Customer care</SectionLabel>
 
               <MobileMenuLink
-                href="/support"
+                href="/account/help"
                 icon={CircleHelp}
                 label="Help center"
                 onClick={closeMobileMenu}
               />
               <MobileMenuLink
-                href="/returns"
+                href="/account/returns"
                 icon={RotateCcw}
                 label="Returns & refunds"
                 onClick={closeMobileMenu}

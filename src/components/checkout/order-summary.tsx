@@ -54,7 +54,7 @@ export default function OrderSummary({ items }: Props) {
         return;
       }
 
-      router.push("/orders");
+      router.push("/account/orders");
       router.refresh();
     } catch {
       alert("Something went wrong while placing the order");

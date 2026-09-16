@@ -27,7 +27,7 @@ export default function HeroSection() {
             </Link>
 
             <Link
-              href="/orders"
+              href="/account/orders"
               className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               View Orders

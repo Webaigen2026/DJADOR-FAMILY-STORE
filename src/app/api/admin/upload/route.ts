@@ -42,9 +42,39 @@ export async function POST(req: Request) {
 
     const urls: string[] = [];
 
+    // Production upload validation
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
+
+    const maxFileSize = 10 * 1024 * 1024; // 10 MB
+
     for (const file of files) {
       if (!file || file.size === 0) {
         continue;
+      }
+
+      // Only allow supported image formats
+      if (!allowedTypes.includes(file.type)) {
+        return NextResponse.json(
+          {
+            error: `Unsupported image type: ${file.name}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Maximum 10 MB per image
+      if (file.size > maxFileSize) {
+        return NextResponse.json(
+          {
+            error: `Image is too large: ${file.name}. Maximum size is 10 MB.`,
+          },
+          { status: 400 }
+        );
       }
 
       const safeName = file.name

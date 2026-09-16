@@ -15,6 +15,7 @@ function generateOtp() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
     const parsed = resendOtpSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -42,6 +43,42 @@ export async function POST(req: Request) {
         { success: false, error: "Email already verified." },
         { status: 400 }
       );
+    }
+
+    // Prevent repeated OTP email requests.
+    const latestOtp = await prisma.oTPCode.findFirst({
+      where: {
+        userId: user.id,
+        email,
+        type: "EMAIL_VERIFICATION",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (latestOtp) {
+      const cooldownMs = 60 * 1000;
+      const elapsedMs = Date.now() - latestOtp.createdAt.getTime();
+
+      if (elapsedMs < cooldownMs) {
+        const retryAfter = Math.ceil(
+          (cooldownMs - elapsedMs) / 1000
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Please wait ${retryAfter} seconds before requesting another code.`,
+          },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": retryAfter.toString(),
+            },
+          }
+        );
+      }
     }
 
     const otp = generateOtp();
