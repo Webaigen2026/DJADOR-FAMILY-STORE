@@ -4,6 +4,7 @@ import Navbar from "../components/layout/navbar";
 import Footer from "../components/layout/footer";
 import Providers from "./providers";
 import DjadorAssistant from "../components/chatbot/djador-assistant";
+import CookieConsent from "../components/privacy/cookie-consent";
 
 export const metadata: Metadata = {
   title: "DJADOR FAMILY STORE",
@@ -34,6 +35,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
+            <CookieConsent />
             <DjadorAssistant />
           </div>
         </Providers>

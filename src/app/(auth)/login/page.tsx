@@ -5,7 +5,7 @@ export default function LoginPage() {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Sign in to continue shopping, track your orders, and manage your account."
+      subtitle="Sign in to view your orders, saved items, and account."
     >
       <LoginForm />
     </AuthLayout>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -10,12 +11,15 @@ export default function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
     setLoading(true);
@@ -38,33 +42,48 @@ export default function RegisterForm() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Failed to create account");
+        setError(
+          data.error || "Failed to create account"
+        );
         return;
       }
 
-      setMessage("Account created successfully! Redirecting to OTP verification...");
+      setMessage(
+        "Account created successfully! Redirecting to OTP verification..."
+      );
 
       setTimeout(() => {
-        router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
+        router.push(
+          `/verify-otp?email=${encodeURIComponent(email)}`
+        );
       }, 1000);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(
+        "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Full Name
         </label>
+
         <input
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) =>
+            setName(e.target.value)
+          }
           placeholder="Enter your name"
+          autoComplete="name"
           className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900"
           required
         />
@@ -74,11 +93,15 @@ export default function RegisterForm() {
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Email Address
         </label>
+
         <input
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
           placeholder="Enter your email"
+          autoComplete="email"
           className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900"
           required
         />
@@ -88,14 +111,52 @@ export default function RegisterForm() {
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Password
         </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Create a password"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900"
-          required
-        />
+
+        <div className="relative">
+          <input
+            type={
+              showPassword
+                ? "text"
+                : "password"
+            }
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+            placeholder="Create a password"
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 outline-none transition focus:border-slate-900"
+            required
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              setShowPassword(
+                (current) => !current
+              )
+            }
+            aria-label={
+              showPassword
+                ? "Hide password"
+                : "Show password"
+            }
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-500 transition hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-900"
+          >
+            {showPassword ? (
+              <EyeOff
+                className="h-5 w-5"
+                aria-hidden="true"
+              />
+            ) : (
+              <Eye
+                className="h-5 w-5"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -115,7 +176,9 @@ export default function RegisterForm() {
         disabled={loading}
         className="w-full rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Creating account..." : "Create Account"}
+        {loading
+          ? "Creating account..."
+          : "Create Account"}
       </button>
 
       <p className="text-center text-sm text-slate-600">

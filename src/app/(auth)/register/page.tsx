@@ -5,7 +5,7 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Join NovaCart to shop faster, manage orders, and enjoy a premium buying experience."
+      subtitle="Create an account to save your favorites, manage orders, and check out faster."
     >
       <RegisterForm />
     </AuthLayout>
