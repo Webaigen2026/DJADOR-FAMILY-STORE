@@ -4,17 +4,21 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
     setLoading(true);
@@ -35,7 +39,9 @@ export default function LoginForm() {
       router.push("/");
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(
+        "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -47,11 +53,13 @@ export default function LoginForm() {
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Email Address
         </label>
+
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
+          autoComplete="email"
           className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900"
           required
         />
@@ -61,14 +69,48 @@ export default function LoginForm() {
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Password
         </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter your password"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900"
-          required
-        />
+
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+            placeholder="Enter your password"
+            autoComplete="current-password"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 outline-none transition focus:border-slate-900"
+            required
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              setShowPassword(
+                (current) => !current
+              )
+            }
+            aria-label={
+              showPassword
+                ? "Hide password"
+                : "Show password"
+            }
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-500 transition hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-900"
+          >
+            {showPassword ? (
+              <EyeOff
+                className="h-5 w-5"
+                aria-hidden="true"
+              />
+            ) : (
+              <Eye
+                className="h-5 w-5"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-sm">
@@ -96,7 +138,10 @@ export default function LoginForm() {
 
       <p className="text-center text-sm text-slate-600">
         Don’t have an account?{" "}
-        <Link href="/register" className="font-semibold text-slate-900 hover:underline">
+        <Link
+          href="/register"
+          className="font-semibold text-slate-900 hover:underline"
+        >
           Create one
         </Link>
       </p>

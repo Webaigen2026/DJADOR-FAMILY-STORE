@@ -76,7 +76,7 @@ function renderAssistantText(text: string) {
           : line;
 
         const parts = content.split(
-          /(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*)/g
+          /(\[[^\]]+\]\([^)]+\)|\*\*[^\*]+\*\*)/g
         );
 
         const renderedParts = parts.map(
@@ -178,9 +178,12 @@ function renderAssistantText(text: string) {
 export default function DjadorAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] =
+    useState(false);
 
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<
+    Message[]
+  >([
     {
       id: 1,
       role: "assistant",
@@ -232,16 +235,15 @@ export default function DjadorAssistant() {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           message: value,
-
           history: messages
-            .filter((message) => message.id !== 1)
+            .filter(
+              (message) => message.id !== 1
+            )
             .slice(-12)
             .map((message) => ({
               role: message.role,
@@ -308,25 +310,28 @@ export default function DjadorAssistant() {
 
   return (
     <>
+      {/* Closed launcher */}
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
           aria-label="Open DJADOR shopping assistant"
-          className="group fixed bottom-6 right-6 z-[80] flex h-14 items-center gap-2.5 rounded-full border border-slate-800 bg-slate-950 px-5 text-white shadow-[0_14px_35px_-10px_rgba(15,23,42,0.55)] transition duration-200 hover:-translate-y-0.5 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+          title="Need help?"
+          className="group fixed bottom-6 right-6 z-[80] flex h-12 w-12 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-white shadow-[0_10px_30px_-8px_rgba(15,23,42,0.45)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_14px_35px_-8px_rgba(15,23,42,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 max-sm:bottom-4 max-sm:right-4"
         >
-          <span className="relative">
-            <MessageCircle className="h-5 w-5" />
+          <MessageCircle className="h-5 w-5" />
 
-            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
-          </span>
+          {/* Online indicator */}
+          <span className="absolute right-[7px] top-[7px] h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-emerald-400" />
 
-          <span className="hidden text-sm font-bold sm:inline">
+          {/* Hover label */}
+          <span className="pointer-events-none absolute right-[58px] whitespace-nowrap rounded-md bg-slate-950 px-2.5 py-1.5 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
             Need help?
           </span>
         </button>
       )}
 
+      {/* Open chatbot */}
       {isOpen && (
         <section
           role="dialog"
@@ -368,7 +373,9 @@ export default function DjadorAssistant() {
               <div className="flex shrink-0 items-center gap-0.5">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() =>
+                    setIsOpen(false)
+                  }
                   aria-label="Minimize assistant"
                   className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
                 >
@@ -377,7 +384,9 @@ export default function DjadorAssistant() {
 
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() =>
+                    setIsOpen(false)
+                  }
                   aria-label="Close assistant"
                   className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
                 >
@@ -401,8 +410,9 @@ export default function DjadorAssistant() {
                   </h3>
 
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Get help with products, orders, returns,
-                    and your account.
+                    Get help with products,
+                    orders, returns, and your
+                    account.
                   </p>
                 </div>
               )}
@@ -424,7 +434,8 @@ export default function DjadorAssistant() {
                           : "rounded-2xl rounded-bl-sm border border-slate-200 bg-white text-slate-700 shadow-sm"
                       }`}
                     >
-                      {message.role === "assistant"
+                      {message.role ===
+                      "assistant"
                         ? renderAssistantText(
                             message.text
                           )
@@ -445,7 +456,8 @@ export default function DjadorAssistant() {
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400 [animation-delay:300ms]" />
 
                       <span className="ml-1 text-[11px] font-medium text-slate-500">
-                        DJADOR Assistant is typing
+                        DJADOR Assistant is
+                        typing
                       </span>
                     </div>
                   </div>
@@ -467,14 +479,18 @@ export default function DjadorAssistant() {
 
                           return (
                             <button
-                              key={action.label}
+                              key={
+                                action.label
+                              }
                               type="button"
                               onClick={() => {
                                 void sendMessage(
                                   action.label
                                 );
                               }}
-                              disabled={isLoading}
+                              disabled={
+                                isLoading
+                              }
                               className={`group flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-amber-50/60 disabled:cursor-not-allowed disabled:opacity-60 ${
                                 index !==
                                 QUICK_ACTIONS.length -
@@ -512,8 +528,8 @@ export default function DjadorAssistant() {
                       <CircleHelp className="h-3.5 w-3.5 text-slate-400" />
 
                       <p className="text-[10px] text-slate-400">
-                        Or ask us anything about your
-                        shopping
+                        Or ask us anything
+                        about your shopping
                       </p>
                     </div>
                   </div>
@@ -533,7 +549,9 @@ export default function DjadorAssistant() {
                 ref={inputRef}
                 value={input}
                 onChange={(event) =>
-                  setInput(event.target.value)
+                  setInput(
+                    event.target.value
+                  )
                 }
                 onKeyDown={(event) => {
                   if (
@@ -557,7 +575,8 @@ export default function DjadorAssistant() {
               <button
                 type="submit"
                 disabled={
-                  !input.trim() || isLoading
+                  !input.trim() ||
+                  isLoading
                 }
                 aria-label="Send message"
                 className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
@@ -570,7 +589,8 @@ export default function DjadorAssistant() {
               <Headphones className="h-3 w-3 text-slate-400" />
 
               <span className="text-[9px] font-medium text-slate-400">
-                DJADOR Family Store customer assistance
+                DJADOR Family Store customer
+                assistance
               </span>
             </div>
           </div>
